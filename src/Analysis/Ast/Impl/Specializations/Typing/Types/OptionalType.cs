@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonUnionType Add(IPythonType t) => this;
         public IPythonUnionType Add(IPythonUnionType types) => this;
 
-        public override IPythonInstance CreateInstance(IArgumentSet args)
+        public override IMember CreateInstance(IArgumentSet args)
             => InnerType.CreateInstance(args);
     }
 }

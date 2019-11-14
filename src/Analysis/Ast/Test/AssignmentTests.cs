@@ -221,6 +221,15 @@ fob3 = x
         }
 
         [TestMethod, Priority(0)]
+        public async Task AugmentedAssignToUndefined() {
+            const string code = @"
+x += 1
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().NotHaveVariable("x");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task BaseInstanceVariable() {
             const string code = @"
 class C:

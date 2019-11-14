@@ -79,10 +79,8 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            IMember member;
-
             lock (_membersLock) {
-                if (Members.TryGetValue(name, out member)) {
+                if (Members.TryGetValue(name, out var member)) {
                     return member;
                 }
             }
@@ -101,12 +99,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             using (_memberGuard.Push(this, out var reentered)) {
                 if (!reentered) {
-                    foreach (var m in Mro.Reverse()) {
-                        if (m == this) {
-                            return member;
-                        }
-                        member = member ?? m.GetMember(name);
-                    }
+                    return Mro.Skip(1).Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
                 }
                 return null;
             }
@@ -149,7 +142,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IPythonInstance CreateInstance(IArgumentSet args) {
+        public override IMember CreateInstance(IArgumentSet args) {
             var builtins = DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Specializations
             switch (Name) {
@@ -165,6 +158,12 @@ namespace Microsoft.Python.Analysis.Types {
                         return PythonCollectionType.CreateTuple(builtins, contents);
                     }
             }
+
+            // Metaclasses return type, not instance.
+            if (Bases.MaybeEnumerate().Any(b => b.Name == "type" && b.DeclaringModule.ModuleType == ModuleType.Builtins)) {
+                return this;
+            }
+
             return new PythonInstance(this);
         }
 
@@ -188,7 +187,7 @@ namespace Microsoft.Python.Analysis.Types {
         public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
         public IReadOnlyList<IPythonType> Bases {
             get {
-                lock(_membersLock) {
+                lock (_membersLock) {
                     return _bases?.ToArray();
                 }
             }
@@ -348,7 +347,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Get locally declared variable, make sure it is a declaration
                         // and that it declared a class.
                         var lv = scope.Variables[b.Name];
-                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(this.Location)) {
+                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(Location)) {
                             // There is a declaration with the same name, but it appears later in the module. Use the import.
                             if (!importedType.IsUnknown()) {
                                 newBases.Add(importedType);

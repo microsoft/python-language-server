@@ -45,11 +45,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = target.GetPythonType();
             if (type != null) {
                 if (!(target is IPythonInstance instance)) {
-                    instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
+                    instance = type.CreateInstance(ArgumentSet.Empty(expr, this)) as IPythonInstance;
                 }
-                var index = GetValueFromExpression(expr.Index, lookupOptions);
-                if (index != null) {
-                    return type.Index(instance, new ArgumentSet(new[] { index }, expr, this));
+                if (instance != null) {
+                    var index = GetValueFromExpression(expr.Index, lookupOptions);
+                    if (index != null) {
+                        return type.Index(instance, new ArgumentSet(new[] {index}, expr, this));
+                    }
                 }
             }
 

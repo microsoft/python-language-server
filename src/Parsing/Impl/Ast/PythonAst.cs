@@ -50,12 +50,14 @@ namespace Microsoft.Python.Parsing.Ast {
                 locs.AddRange(a.NewLineLocations.Select(ll => new NewLineLocation(ll.EndIndex + offset, ll.Kind)));
                 offset = locs.LastOrDefault().EndIndex;
             }
+
             NewLineLocations = locs.ToArray();
             offset = 0;
             foreach (var a in asts) {
                 comments.AddRange(a.CommentLocations.Select(cl => new SourceLocation(cl.Line + offset, cl.Column)));
                 offset += a.NewLineLocations.Length + 1;
             }
+
             CommentLocations = comments.ToArray();
             ScopeInfo = new AstScopeInfo(this);
         }
@@ -75,7 +77,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool HasVerbatim { get; internal set; }
 
-        public override IEnumerable<Node> GetChildNodes() => new[] { _body };
+        public override IEnumerable<Node> GetChildNodes() => new[] {_body};
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -89,6 +91,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 await _body.WalkAsync(walker, cancellationToken);
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -103,9 +106,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public PythonLanguageVersion LanguageVersion { get; }
 
-        public void Reduce(Func<Statement, bool> filter) {
+        public void ReduceToImports() {
             lock (_lock) {
-                (Body as SuiteStatement)?.FilterStatements(filter);
+                (Body as SuiteStatement)?.ReduceToImports();
                 _attributes?.Clear();
                 CommentLocations = Array.Empty<SourceLocation>();
                 // DO keep NewLineLocations as they are required
@@ -151,8 +154,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region ILocationConverter
+
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
+
         #endregion
 
         internal int GetLineEndFromPosition(int index) {

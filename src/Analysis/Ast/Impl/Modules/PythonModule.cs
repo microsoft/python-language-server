@@ -133,7 +133,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
+        public IMember CreateInstance(IArgumentSet args) => new PythonInstance(this);
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
@@ -162,35 +162,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
 
-        public virtual IEnumerable<string> GetMemberNames() {
-            // drop imported modules and typing.
-            return GlobalScope.Variables
-                .Where(v => {
-                    // Instances are always fine.
-                    if (v.Value is IPythonInstance) {
-                        return true;
-                    }
+        public virtual IEnumerable<string> GetMemberNames() => GlobalScope.GetExportableVariableNames();
 
-                    var valueType = v.Value?.GetPythonType();
-                    switch (valueType) {
-                        case PythonModule _:
-                        case IPythonFunctionType f when f.IsLambda():
-                            return false; // Do not re-export modules.
-                    }
-
-                    if (this is TypingModule) {
-                        return true; // Let typing module behave normally.
-                    }
-
-                    // Do not re-export types from typing. However, do export variables
-                    // assigned with types from typing. Example:
-                    //    from typing import Any # do NOT export Any
-                    //    x = Union[int, str] # DO export x
-                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
-                })
-                .Select(v => v.Name)
-                .ToArray();
-        }
         #endregion
 
         #region ILocatedMember
@@ -340,7 +313,16 @@ namespace Microsoft.Python.Analysis.Modules {
             _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
             ContentState = State.Parsing;
-            _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
+            _parsingTask = Task.Run(() => ParseAndLogExceptions(_linkedParseCts.Token), _linkedParseCts.Token);
+        }
+
+        private void ParseAndLogExceptions(CancellationToken cancellationToken) {
+            try {
+                Parse(cancellationToken);
+            } catch (Exception ex) when (!(ex is OperationCanceledException)) {
+                Log?.Log(TraceEventType.Warning, $"Exception while parsing {FilePath}: {ex}");
+                throw;
+            }
         }
 
         private void Parse(CancellationToken cancellationToken) {
@@ -348,7 +330,7 @@ namespace Microsoft.Python.Analysis.Modules {
             int version;
             Parser parser;
 
-            //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
+            // Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name} ({ModuleType})");
 
             lock (_syncObj) {
                 version = _buffer.Version;
@@ -364,7 +346,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             var ast = parser.ParseFile(Uri);
 
-            //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
+            // Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name} ({ModuleType})");
 
             lock (_syncObj) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -528,7 +510,6 @@ namespace Microsoft.Python.Analysis.Modules {
                     Parse();
                 }
             }
-            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         private void SetOrLoadContent(string content) {

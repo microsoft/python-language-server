@@ -132,13 +132,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return true;
             }
 
-            // Allow extensions from specialized functions 
-            // We specialized type to be a function even though it is a class, so this allows extension of type
-            // TODO handle module specialization better: https://github.com/microsoft/python-language-server/issues/1367
-            if (m is IPythonType t && t.IsSpecialized) {
-                return true;
-            }
-
             switch (m.MemberType) {
                 // Inheriting from these members is invalid
                 case PythonMemberType.Method:

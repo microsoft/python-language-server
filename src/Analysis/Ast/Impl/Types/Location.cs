@@ -23,6 +23,8 @@ namespace Microsoft.Python.Analysis.Types {
             IndexSpan = indexSpan;
         }
 
+        public void Deconstruct(out IPythonModule module, out IndexSpan indexSpan) => (module, indexSpan) = (Module, IndexSpan);
+
         public IPythonModule Module { get; }
         public IndexSpan IndexSpan { get; }
 

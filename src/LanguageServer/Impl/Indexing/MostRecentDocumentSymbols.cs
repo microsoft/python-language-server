@@ -72,7 +72,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancellationTokenSource cts,
                 Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> fn) {
                 using (cts) {
-                    return await fn(cts.Token);
+                    var result = await fn(cts.Token);
+
+                    lock (_lock) {
+                        // Attempt to set _workCts to null if that's the current _workCts
+                        // to avoid catching ObjectDisposedException all the time.
+                        if (_workCts == cts) {
+                            _workCts = null;
+                        }
+                    }
+
+                    return result;
                 }
             }
         }

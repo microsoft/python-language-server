@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             var config = interpreter.Configuration;
-            if (moduleType.IsCompiled() || string.IsNullOrEmpty(filePath) || modulePathType == PythonLibraryPathType.StdLib) {
+            if (moduleType == ModuleType.CompiledBuiltin || string.IsNullOrEmpty(filePath) || modulePathType == PythonLibraryPathType.StdLib) {
                 // If module is a standard library, unique id is its name + interpreter version.
                 return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }

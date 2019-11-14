@@ -29,6 +29,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IPythonModule Module { get; }
         public string Name => string.Empty;
+        public PythonAst Ast => Module.Analysis.Ast;
         public IScopeNode Node => Module.Analysis.Ast;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; }

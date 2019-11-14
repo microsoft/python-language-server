@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly FunctionDefinition _function;
         private IMember _result;
 
-        public FunctionCallEvaluator(IPythonModule declaringModule, FunctionDefinition fd, ExpressionEval eval): base(eval) {
+        public FunctionCallEvaluator(IPythonModule declaringModule, FunctionDefinition fd, ExpressionEval eval): base(eval, SimpleImportedVariableHandler.Instance) {
             _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _eval = eval ?? throw new ArgumentNullException(nameof(eval));
             _function = fd ?? throw new ArgumentNullException(nameof(fd));
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Open scope and declare parameters
             using (_eval.OpenScope(_declaringModule, _function, out _)) {
                 args.DeclareParametersInScope(_eval);
-                _function.Body.Walk(this);
+                _function.Body?.Walk(this);
             }
             return _result;
         }

@@ -602,13 +602,15 @@ print(os_path.basename('a/b/c'))
 
             reference = ds.FindDefinition(analysis, new SourceLocation(4, 12), out _);
             reference.Should().NotBeNull();
-            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            var osPyPath = reference.uri.AbsolutePath;
+            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
 
             reference = ds.FindDefinition(analysis, new SourceLocation(5, 12), out _);
             reference.Should().NotBeNull();
-            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            reference.uri.AbsolutePath.Should().Be(osPyPath);
+            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
         }
@@ -648,6 +650,43 @@ x = datetime.datetime.day
             reference.range.start.line.Should().BeGreaterThan(0);
             reference.uri.AbsolutePath.Should().Contain("datetime.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromMultiImport() {
+            var otherModPath = TestData.GetTestSpecificUri("other.py");
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string otherModCode = @"
+def a(): ...
+def b(): ...
+def c(): ...
+";
+            const string testModCode = @"
+from other import a, b, c
+";
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(otherModPath, otherModCode);
+            var testMod = rdt.OpenDocument(testModPath, testModCode);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 19), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(1, 4, 1, 5);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 22), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(2, 4, 2, 5);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(3, 4, 3, 5);
         }
     }
 }

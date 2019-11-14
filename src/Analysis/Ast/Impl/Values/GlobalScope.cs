@@ -15,6 +15,9 @@
 
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing;
 
@@ -42,14 +45,14 @@ namespace Microsoft.Python.Analysis.Values {
             var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
             var objectType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
-            DeclareVariable("__debug__", boolType, VariableSource.Builtin, location);
-            DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
-            DeclareVariable("__file__", strType, VariableSource.Builtin, location);
-            DeclareVariable("__name__", strType, VariableSource.Builtin, location);
-            DeclareVariable("__package__", strType, VariableSource.Builtin, location);
-            DeclareVariable("__path__", listType, VariableSource.Builtin, location);
-            DeclareVariable("__dict__", dictType, VariableSource.Builtin, location);
-            DeclareVariable("__spec__", objectType, VariableSource.Builtin, location);
+            DeclareBuiltinVariable("__debug__", boolType, location);
+            DeclareBuiltinVariable("__doc__", strType, location);
+            DeclareBuiltinVariable("__file__", strType, location);
+            DeclareBuiltinVariable("__name__", strType, location);
+            DeclareBuiltinVariable("__package__", strType, location);
+            DeclareBuiltinVariable("__path__", listType, location);
+            DeclareBuiltinVariable("__dict__", dictType, location);
+            DeclareBuiltinVariable("__spec__", objectType, location);
         }
     }
 }

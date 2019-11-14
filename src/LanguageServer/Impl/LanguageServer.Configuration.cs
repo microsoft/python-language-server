@@ -29,6 +29,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
+using Microsoft.Python.LanguageServer.CodeActions;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.SearchPaths;
 using Newtonsoft.Json.Linq;
@@ -40,6 +41,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/didChangeConfiguration")]
         public async Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
+
                 var settings = new LanguageServerSettings();
 
                 // https://github.com/microsoft/python-language-server/issues/915
@@ -65,8 +68,47 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
                 HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
                 HandleDiagnosticsChanges(pythonSection, settings);
+                HandleCodeActionsChanges(pythonSection);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
+            }
+        }
+
+        private void HandleCodeActionsChanges(JToken pythonSection) {
+            var refactoring = new Dictionary<string, object>();
+            var quickFix = new Dictionary<string, object>();
+
+            var refactoringToken = pythonSection["refactoring"];
+            var quickFixToken = pythonSection["quickfix"];
+
+            // +1 is for last "." after prefix
+            AppendToMap(refactoringToken, refactoringToken?.Path.Length + 1 ?? 0, refactoring);
+            AppendToMap(quickFixToken, quickFixToken?.Path.Length + 1 ?? 0, quickFix);
+
+            var codeActionSettings = new CodeActionSettings(refactoring, quickFix);
+            _server.HandleCodeActionsChange(codeActionSettings);
+
+            void AppendToMap(JToken setting, int prefixLength, Dictionary<string, object> map) {
+                if (setting == null || !setting.HasValues) {
+                    return;
+                }
+
+                foreach (var child in setting) {
+                    if (child is JValue value) {
+                        // there shouldn't be duplicates and prefix must exist.
+                        var path = child.Path;
+                        if (path.Length <= prefixLength) {
+                            // nothing to add
+                            continue;
+                        }
+
+                        // get rid of common "settings.python..." prefix
+                        map[path.Substring(prefixLength)] = value.Value;
+                        continue;
+                    }
+
+                    AppendToMap(child, prefixLength, map);
+                }
             }
         }
 
@@ -180,20 +222,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return ImmutableArray<string>.Empty;
         }
 
-        private const string DefaultCachingLevel = "System";
+        private const string DefaultCachingLevel = "None";
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
-            
-            if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
-                s = DefaultCachingLevel;
-            }
+            // TODO: Remove this one caching is working at any level again.
+            // https://github.com/microsoft/python-language-server/issues/1758
+            return AnalysisCachingLevel.None;
 
-            if (s.EqualsIgnoreCase("System")) {
-                return AnalysisCachingLevel.System;
-            }
-
-            return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
+            // var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
+            // 
+            // if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
+            //     s = DefaultCachingLevel;
+            // }
+            // 
+            // if (s.EqualsIgnoreCase("System")) {
+            //     return AnalysisCachingLevel.System;
+            // }
+            // 
+            // return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }
 }

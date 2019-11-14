@@ -21,7 +21,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
@@ -42,6 +41,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class MissingImportCodeActionTests : LanguageServerTestBase {
         public TestContext TestContext { get; set; }
+        public CancellationToken CancellationToken => TestContext.CancellationTokenSource.Token;
 
         [TestInitialize]
         public void TestInitialize()
@@ -50,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task Missing() {
             MarkupUtils.GetSpan(@"[|missingModule|]", out var code, out var span);
 
@@ -58,11 +58,11 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
             diagnostics.Should().NotBeEmpty();
 
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
             codeActions.Should().BeEmpty();
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task TopModule() {
             const string markup = @"{|insertionSpan:|}{|diagnostic:ntpath|}";
 
@@ -73,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: "import ntpath", insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task TopModuleFromFunctionInsertTop() {
             const string markup = @"{|insertionSpan:|}def TestMethod():
     {|diagnostic:ntpath|}";
@@ -87,7 +87,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: "import ntpath", insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task TopModuleLocally() {
             const string markup = @"def TestMethod():
 {|insertionSpan:|}    {|diagnostic:ntpath|}";
@@ -101,7 +101,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: string.Format(Resources.ImportLocally, "import ntpath"), insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SubModule() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:util|}",
@@ -109,7 +109,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import util" + Environment.NewLine + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SubModuleUpdate() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:from ctypes import util|}
@@ -118,7 +118,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task SubModuleUpdateLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -128,7 +128,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SubModuleFromFunctionInsertTop() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}def TestMethod():
@@ -138,7 +138,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import test" + Environment.NewLine + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task AfterExistingImport() {
             await TestCodeActionAsync(
                 @"from os import path
@@ -148,7 +148,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import util" + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task ReplaceExistingImport() {
             await TestCodeActionAsync(
                 @"from os import path
@@ -160,7 +160,7 @@ import socket
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task AfterExistingImportLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -171,7 +171,7 @@ import socket
                 newText: "    from ctypes import util" + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task ReplaceExistingImportLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -184,7 +184,7 @@ import socket
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0), Ignore]
+        [TestMethod, Priority(0), Ignore, Timeout(AnalysisTimeoutInMS)]
         public async Task CodeActionOrdering() {
             MarkupUtils.GetSpan(@"def TestMethod():
     [|test|]", out var code, out var span);
@@ -193,7 +193,7 @@ import socket
             var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
             diagnostics.Should().NotBeEmpty();
 
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
 
             var list = codeActions.Select(c => c.title).ToList();
             var zipList = Enumerable.Range(0, list.Count).Zip(list);
@@ -205,7 +205,7 @@ import socket
             maxIndexOfTopAddImports.Should().BeLessThan(minIndexOfLocalAddImports);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task PreserveComment() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:from os import pathconf|} # test
@@ -215,7 +215,7 @@ import socket
                 newText: "from os import path, pathconf");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task MemberSymbol() {
             await TestCodeActionAsync(
                 @"from os import path
@@ -225,7 +225,7 @@ import socket
                 newText: "from socket import socket" + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task NoMemberSymbol() {
             var markup = @"{|insertionSpan:|}{|diagnostic:socket|}";
 
@@ -239,7 +239,7 @@ import socket
             TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SymbolOrdering() {
             var markup = @"from os import path
 {|insertionSpan:|}
@@ -256,7 +256,7 @@ import socket
             maxIndexOfPublicSymbol.Should().BeLessThan(minIndexOfPrivateSymbol);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SymbolOrdering2() {
             var markup = @"from os import path
 {|insertionSpan:|}
@@ -275,7 +275,7 @@ import socket
             importedMemberIndex.Should().BeLessThan(restIndex);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SymbolOrdering3() {
             var markup = @"{|insertionSpan:|}{|diagnostic:pd|}";
 
@@ -290,7 +290,7 @@ import socket
             // calculate actions
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
 
             var list = codeActions.Select(c => c.title).ToList();
             var zipList = Enumerable.Range(0, list.Count).Zip(list);
@@ -301,7 +301,7 @@ import socket
             pandasIndex.Should().BeLessThan(pdIndex);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task ModuleNotReachableFromUserDocument() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:path|}",
@@ -310,7 +310,7 @@ import socket
                 enableIndexManager: true);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestAbbreviationForKnownModule() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:pandas|}",
@@ -320,7 +320,7 @@ import socket
                 relativePaths: "pandas.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestAbbreviationForKnownModule2() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:pyplot|}",
@@ -330,7 +330,7 @@ import socket
                 relativePaths: @"matplotlib\pyplot.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestAbbreviationForKnownModule3() {
             var markup = @"
 {|insertionSpan:from matplotlib import test|}
@@ -344,7 +344,7 @@ import socket
                 relativePaths: new string[] { @"matplotlib\pyplot.py", @"matplotlib\test.py" });
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestReverseAbbreviationForKnownModule() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:pd|}",
@@ -354,7 +354,7 @@ import socket
                 relativePaths: "pandas.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestReverseAbbreviationForKnownModule2() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:plt|}",
@@ -364,7 +364,7 @@ import socket
                 relativePaths: @"matplotlib\pyplot.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task SuggestReverseAbbreviationForKnownModule3() {
             var markup = @"
 {|insertionSpan:from matplotlib import test|}
@@ -378,7 +378,7 @@ import socket
                 relativePaths: new string[] { @"matplotlib\pyplot.py", @"matplotlib\test.py" });
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task AbbreviationConflict() {
             var markup = @"{|insertionSpan:|}pd = 1
 
@@ -392,7 +392,7 @@ import socket
                 relativePaths: "pandas.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task AbbreviationConflict2() {
             var markup = @"{|insertionSpan:|}{|diagnostic:pandas|}
 
@@ -407,7 +407,7 @@ def Method():
                 relativePaths: "pandas.py");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task ContextBasedSuggestion() {
             var markup =
                 @"from os import path
@@ -426,7 +426,7 @@ def Method():
             TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task ValidToBeUsedInImport() {
             await TestCodeActionAsync(
                 @"from os import path
@@ -434,6 +434,25 @@ def Method():
 {|diagnostic:join|}",
                 title: "from os.path import join",
                 newText: "from os.path import join" + Environment.NewLine);
+        }
+
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
+        public async Task Disabled() {
+            var markup = @"from os import path
+[|socket|]()";
+
+            MarkupUtils.GetSpan(markup, out var code, out var span);
+
+            var analysis = await GetAnalysisAsync(code);
+            var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            diagnostics.Should().NotBeEmpty();
+
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
+            codeActions.Should().NotBeEmpty();
+
+            var emptyActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(
+                analysis, new CodeActionSettings(null, new Dictionary<string, object>() { { "addimports", false } }), diagnostics, CancellationToken);
+            emptyActions.Should().BeEmpty();
         }
 
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
@@ -461,7 +480,7 @@ def Method():
                     serviceManager.GetService<IIdleTimeService>());
 
                 // make sure index is done
-                await indexManager.IndexWorkspace(analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver);
+                await indexManager.IndexSnapshot(analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver);
 
                 serviceManager.AddService(indexManager);
             }
@@ -469,7 +488,7 @@ def Method():
             var insertionSpan = spans["insertionSpan"].First().ToSourceSpan(analysis.Ast);
 
             var diagnostics = GetDiagnostics(analysis, spans["diagnostic"].First().ToSourceSpan(analysis.Ast), codes);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
             return (analysis, codeActions.ToArray(), insertionSpan);
         }
 
@@ -503,7 +522,7 @@ def Method():
             // calculate actions
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
 
             // verify results
             var codeAction = codeActions.Single(c => c.title == title);
