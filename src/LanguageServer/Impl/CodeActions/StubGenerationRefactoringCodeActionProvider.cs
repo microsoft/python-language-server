@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -70,7 +71,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             var module = GetModule(analysis, scope, node, cancellationToken);
-            if (module == null || module.Stub != null || module.FilePath == null) {
+            if (module == null || module.Analysis is EmptyAnalysis || module.FilePath == null) {
+                return SpecializedTasks.EmptyEnumerable<CodeAction>();
+            }
+
+            if (module.Stub != null) {
+                // for now, we bail out but later we would like to check whether we can improve existing stub
+                // with information we have
                 return SpecializedTasks.EmptyEnumerable<CodeAction>();
             }
 
@@ -85,7 +92,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return SpecializedTasks.EmptyEnumerable<CodeAction>();
             }
 
-            var title = $"Generate stub for '{module.Name}' in '{stubPath}'";
+            var title = Resources.GenerateStub_0_1.FormatUI(module.Name, stubPath);
             var codeAction = new CodeAction() {
                 title = title,
                 kind = CodeActionKind.Refactor,

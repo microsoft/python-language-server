@@ -44,32 +44,15 @@ namespace Microsoft.Python.Analysis.Generators {
                         return false;
                     }
 
-                    if (IsPrivate(nex.Name, _allVariables) && !UsedInModule(nex.Name)) {
+                    // TODO: create poorman's reference finder based on a name within this file.
+                    //       and use that to see whether the private member is used within this file
+                    if (IsPrivate(nex.Name, _allVariables)) {
                         // remove any private variables
                         return RemoveNode(node.IndexSpan);
                     }
                 }
 
                 return base.Walk(node, parent);
-            }
-
-            private bool UsedInModule(string name) {
-                // the one we generated (_mod_xxxx), for now, we always say "not used" and remove those for now
-                // for as lvalue in assignment
-                if (name.StartsWith("_mod_")) {
-                    return false;
-                }
-
-                // otherwise, check existing analysis of original code
-                var eval = Module.Analysis.ExpressionEvaluator;
-                var member = eval.LookupNameInScopes(name, Analyzer.LookupOptions.All);
-                if (member == null || member.IsUnknown()) {
-                    return false;
-                }
-
-                // TODO: we need to see references to this and whether it ends up used in a call to define public variable
-                //       in that case, we can't remove this private variable
-                return false;
             }
         }
     }

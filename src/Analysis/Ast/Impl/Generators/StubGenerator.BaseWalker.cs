@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -55,14 +56,18 @@ namespace Microsoft.Python.Analysis.Generators {
                 return _sb.ToString();
             }
 
+            protected string GetOriginalText(IndexSpan span) {
+                return _original.Substring(span.Start, span.Length);
+            }
+
             protected void AppendOriginalText(int index) {
                 _sb.Append(_original.Substring(_lastIndexProcessed, index - _lastIndexProcessed + 1));
-                _lastIndexProcessed = index;
+                _lastIndexProcessed = Math.Max(index, 0);
             }
 
             protected void AppendText(string text, int lastIndex) {
                 _sb.Append(text);
-                _lastIndexProcessed = lastIndex;
+                _lastIndexProcessed = Math.Max(lastIndex, 0);
             }
 
             protected bool RemoveNode(IndexSpan span, bool removeTrailingText = true) {

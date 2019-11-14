@@ -106,6 +106,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Generate stub for &apos;{0}&apos; in &apos;{1}&apos;.
+        /// </summary>
+        internal static string GenerateStub_0_1 {
+            get {
+                return ResourceManager.GetString("GenerateStub_0_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to import locally &apos;{0}&apos;.
         /// </summary>
         internal static string ImportLocally {

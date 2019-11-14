@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Generators {
                     // keep up to header and
                     // get rid of anything after header
                     var span = (index + 1 <= body.EndIndex) ? IndexSpan.FromBounds(index + 1, body.EndIndex) : IndexSpan.FromBounds(index, index);
-                    ReplaceNodeWithText(" ..." + Environment.NewLine, span, removeTrailingText: true);
+                    ReplaceNodeWithText(" ..." + Environment.NewLine, span);
 
                     return true;
                 }

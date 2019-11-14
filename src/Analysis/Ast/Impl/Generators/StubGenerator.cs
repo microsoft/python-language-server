@@ -21,10 +21,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Generators {
     /// <summary>
@@ -56,13 +58,52 @@ namespace Microsoft.Python.Analysis.Generators {
                                       IPythonModule module,
                                       string[] extraScrapeArguments,
                                       CancellationToken cancellationToken) {
-            var scrappedCode = Scrape(interpreter, logger, module, extraScrapeArguments, cancellationToken);
 
-            using (var reader = new StringReader(scrappedCode)) {
-                var parser = Parser.CreateParser(reader, interpreter.LanguageVersion);
-                var ast = parser.ParseFile(module.Uri);
+            var allVariablesMap = new HashSet<string>(GetBestEffortAllVariables(module.GlobalScope));
 
-                var walker = new ScrapeWalker(logger, module, ast, scrappedCode);
+            var code = Scrape(interpreter, logger, module, extraScrapeArguments, cancellationToken);
+
+            // ordering is important since one might remove info the other needs. it is hard to make this not order sensitive because
+            // one can't have consistent data as code being transformed with current python data analysis where it doesn't support
+            // creating new universe with transformed code
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupImportWalker(logger, module, ast, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new RemovePrivateMemberWalker(logger, module, ast, allVariablesMap, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new ConvertDocCommentWalker(logger, module, ast, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupEmptyStatement(logger, module, ast, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new OrganizeMemberWalker(logger, module, ast, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new TypeInfoWalker(logger, module, ast, code), cancellationToken);
+
+            return code;
+        }
+
+        private static IEnumerable<string> GetBestEffortAllVariables(IScope scope) {
+            // this is different than StartImportMemberNames since that only returns something when
+            // all entries are known. 
+            if (scope.Variables.TryGetVariable("__all__", out var variable) &&
+                variable?.Value is IPythonCollection collection) {
+                return collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s));
+            }
+
+            return Array.Empty<string>();
+        }
+
+        private static string Transform(string code,
+                                        PythonLanguageVersion version,
+                                        Func<PythonAst, BaseWalker> walkerFactory,
+                                        CancellationToken cancellationToken) {
+            // code tranform is really hard since every step require reparsing
+            // and semantic data can't be queried with new parse tree until change is
+            // applied to global state. it would be nice to have Roslyn's snapshot model
+            // where one can't apply changes to ask new semantic data without affecting global state
+            // also, since every change require reparsing, one can't do nested bulk changes
+            using (var reader = new StringReader(code)) {
+                var parser = Parser.CreateParser(reader, version);
+                var ast = parser.ParseFile();
+
+                var walker = walkerFactory(ast);
                 ast.Walk(walker);
 
                 return walker.GetCode(cancellationToken);

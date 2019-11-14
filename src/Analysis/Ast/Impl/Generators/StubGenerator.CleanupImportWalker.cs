@@ -40,6 +40,14 @@ namespace Microsoft.Python.Analysis.Generators {
                 if (node.Names.Count == 1) {
                     var moduleName = node.Names[0].MakeString();
                     var asName = node.AsNames[0].Name;
+
+                    // from "import x as y", save y -> x map
+                    // later we will use this to revert back
+                    //
+                    // import x as y
+                    // z = y.z
+                    // to
+                    // from x.y import z as z
                     _fromMap.Add(asName, moduleName);
 
                     return RemoveNode(node.IndexSpan);
@@ -55,16 +63,21 @@ namespace Microsoft.Python.Analysis.Generators {
 
                         // handle call only for __future__
                         if (targetName == "_mod___future__") {
+                            // we treate __future__ special since it needs to be at the top
                             _importMap.GetOrAdd(targetName).Add(nex.Name);
                             return RemoveNode(node.IndexSpan);
                         } else {
                             // keep import as it is for other call
+                            // when y in "import x as y" is used any other way than what we expected
+                            // keey original "import x as y"
                             _importToKeepInOriginalForm.Add(targetName);
                         }
                     }
 
                     // handle member access
                     if (MatchMemberName(node.Right as MemberExpression, out var memberName)) {
+                        // this saves "z = y.z" to y -> list of z so that we can revert things
+                        // to from x.y import z as z form
                         _importMap.GetOrAdd(memberName).Add(nex.Name);
                         return RemoveNode(node.IndexSpan);
                     }
@@ -97,6 +110,7 @@ namespace Microsoft.Python.Analysis.Generators {
             private string GetImportStatements() {
                 var sb = new StringBuilder();
 
+                // handle __future__ case first
                 var future = _fromMap.FirstOrDefault(kv => kv.Value == "__future__");
                 AppendImports(sb, future, useAs: false);
 

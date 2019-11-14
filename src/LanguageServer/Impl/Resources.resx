@@ -132,6 +132,9 @@
   <data name="Error_InvalidCachePath" xml:space="preserve">
     <value>Specified cache folder does not exist. Switching to default.</value>
   </data>
+  <data name="GenerateStub_0_1" xml:space="preserve">
+    <value>Generate stub for '{0}' in '{1}'</value>
+  </data>
   <data name="ImportLocally" xml:space="preserve">
     <value>import locally '{0}'</value>
   </data>
