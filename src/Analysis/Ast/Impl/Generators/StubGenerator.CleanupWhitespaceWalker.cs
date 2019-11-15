@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Types;
@@ -26,30 +27,38 @@ using Microsoft.Python.Parsing.Extensions;
 namespace Microsoft.Python.Analysis.Generators {
     public sealed partial class StubGenerator {
         private sealed class CleanupWhitespaceWalker : BaseWalker {
-            private LinkedList<(int start, int indentation)> _indentations;
+            // we could push actual indentation string rather than indentation size
+            // to workaround "space" vs "tab" option which we don't have an access to in
+            // this code path
+            private readonly LinkedList<(int start, int indentation)> _indentations;
+            private readonly Stack<int> _indentationStack;
 
             public CleanupWhitespaceWalker(ILogger logger, IPythonModule module, PythonAst ast, string original)
                 : base(logger, module, ast, original) {
                 // it would be nice if there is a general formatter one can use to just format code rather than
                 // having this kind of custom walker for feature which does simple formatting
                 _indentations = new LinkedList<(int start, int indentation)>();
+                _indentationStack = new Stack<int>();
             }
 
             public override bool Walk(ClassDefinition node, Node parent) {
-                // assumes no nested class. if there could be nested classes, add interval tree to save indentation
-                _indentations.AddLast((node.HeaderIndex, ComputeIndentation(node)));
+                PushIndentation(node, node.HeaderIndex);
                 return true;
             }
 
             public override void PostWalk(ClassDefinition node, Node parent) {
-                _indentations.AddLast((node.EndIndex, ComputeIndentation(GetContainer(parent))));
+                PopIndentation(node, parent);
             }
 
             public override bool Walk(FunctionDefinition node, Node parent) {
-                // assumes no nested function. if there could be nested function, add interval tree to save indentation
-                _indentations.AddLast((node.HeaderIndex, ComputeIndentation(node)));
-                _indentations.AddLast((node.EndIndex, ComputeIndentation(GetContainer(parent))));
+                PushIndentation(node, node.HeaderIndex);
+
+                // assumes no nested function. no need to walk down
                 return false;
+            }
+
+            public override void PostWalk(FunctionDefinition node, Node parent) {
+                PopIndentation(node, parent);
             }
 
             public override string GetCode(CancellationToken cancellationToken) {
@@ -75,7 +84,7 @@ namespace Microsoft.Python.Analysis.Generators {
 
                     var indentation = GetIndentation(current);
                     if (indentation < 0) {
-                        // this should never happen.
+                        // previous and current is on same line
                         AppendOriginalText(current.StartIndex);
                         continue;
                     }
@@ -125,6 +134,20 @@ namespace Microsoft.Python.Analysis.Generators {
 
                     return node.EndIndex;
                 }
+            }
+
+            private void PushIndentation(ScopeStatement node, int headerIndex) {
+                _indentationStack.Push(ComputeIndentation(node));
+                _indentations.AddLast((headerIndex, _indentationStack.Peek()));
+            }
+
+            private void PopIndentation(ScopeStatement node, Node parent) {
+                _indentationStack.Pop();
+
+                var indentation = _indentationStack.Count == 0 ? 0 : _indentationStack.Peek();
+                _indentations.AddLast((node.EndIndex, indentation));
+
+                Debug.Assert(indentation == ComputeIndentation(GetContainer(parent)));
             }
 
             private string GetSpacesBetween(Node previous, Node current, int indentation) {
