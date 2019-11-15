@@ -72,6 +72,7 @@ namespace Microsoft.Python.Analysis.Generators {
             code = Transform(code, interpreter.LanguageVersion, ast => new CleanupEmptyStatement(logger, module, ast, code), cancellationToken);
             code = Transform(code, interpreter.LanguageVersion, ast => new OrganizeMemberWalker(logger, module, ast, code), cancellationToken);
             code = Transform(code, interpreter.LanguageVersion, ast => new TypeInfoWalker(logger, module, ast, code), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupWhitespaceWalker(logger, module, ast, code), cancellationToken);
 
             return code;
         }

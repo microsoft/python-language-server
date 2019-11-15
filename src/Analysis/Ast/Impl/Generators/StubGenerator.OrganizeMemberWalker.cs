@@ -55,12 +55,17 @@ namespace Microsoft.Python.Analysis.Generators {
 
                     AppendTextUpto(codeToSkipQueue, index);
 
+                    // indentation is not correct if option is set to tab
                     var indentationString = new string(' ', indentation);
                     for (var i = 0; i < entry.Value.Count; i++) {
                         var node = entry.Value[i];
                         AppendText($"{(i == 0 ? string.Empty : indentationString)}" + GetOriginalText(node.IndexSpan) + Environment.NewLine, index);
                         codeToSkipQueue.Add(node.StartIndex, node);
                     }
+
+                    // unfortunately, I need to do this to make indentation correct for next statement
+                    // hopefully, at some point, we have general helper that handle this for all others
+                    AppendText(indentationString, index);
                 }
 
                 if (codeToSkipQueue.Count > 0) {
@@ -94,7 +99,7 @@ namespace Microsoft.Python.Analysis.Generators {
 
                 (int, int) GetStartIndexAndIndentation(Node current) {
                     var start = current.GetStart(Ast);
-                    return (Math.Max(0, current.StartIndex - 1), Math.Max(start.Column - 1, 0));
+                    return (current.StartIndex, Math.Max(start.Column - 1, 0));
                 }
             }
 
@@ -111,23 +116,6 @@ namespace Microsoft.Python.Analysis.Generators {
 
                 // how this can happen if this contains assigments?
                 return statements[0];
-            }
-
-            private static bool IsDocumentation(Statement statement) {
-                return statement is ExpressionStatement exprStmt && exprStmt.Expression is ConstantExpression;
-            }
-
-            private Node GetContainer(Node node) {
-                while (node != null) {
-                    if (node is PythonAst ||
-                        node is ClassDefinition) {
-                        return node;
-                    }
-
-                    node = GetParent(node);
-                }
-
-                return Ast;
             }
         }
     }

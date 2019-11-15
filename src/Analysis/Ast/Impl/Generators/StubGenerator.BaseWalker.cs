@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // get code that are not left in original code
-                AppendOriginalText(_original.Length - 1);
+                AppendOriginalText(_original.Length);
 
                 return _sb.ToString();
             }
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Generators {
             }
 
             protected void AppendOriginalText(int index) {
-                _sb.Append(_original.Substring(_lastIndexProcessed, index - _lastIndexProcessed + 1));
+                _sb.Append(_original.Substring(_lastIndexProcessed, index - _lastIndexProcessed));
                 _lastIndexProcessed = Math.Max(index, 0);
             }
 
@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 span = GetSpan(span, removeTrailingText);
 
                 // put code between last point we copied and this node
-                AppendOriginalText(span.Start - 1);
+                AppendOriginalText(span.Start);
 
                 // if we have str literal under expression, convert it to prettified doc comment
                 AppendText(text, span.End);
@@ -100,8 +100,24 @@ namespace Microsoft.Python.Analysis.Generators {
                 }
             }
 
+            protected ScopeStatement GetContainer(Node node) {
+                while (node != null) {
+                    if (node is ScopeStatement scope) {
+                        return scope;
+                    }
+
+                    node = GetParent(node);
+                }
+
+                return Ast;
+            }
+
             protected static bool IsPrivate(string identifier, HashSet<string> allVariables) {
                 return identifier.StartsWith("_") && !allVariables.Contains(identifier);
+            }
+
+            protected static bool IsDocumentation(Statement statement) {
+                return statement is ExpressionStatement exprStmt && exprStmt.Expression is ConstantExpression;
             }
         }
     }
