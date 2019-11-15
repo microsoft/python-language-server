@@ -17,8 +17,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -41,14 +45,27 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
             : base(moduleName, ModuleType.Builtins, filePath, null, false, false, services) { } // TODO: builtins stub & persistence
 
+        #region IMemberContainer
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
         public IMember GetAnyMember(string name) => base.GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
+        #endregion
+
+        public void Initialize() => ParseAndLogExceptions(CancellationToken.None);
 
         protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new[] { "-W", "ignore", "-B", "-E", sb };
+
+        protected override void Parse() { }
+
+        protected override void Analyze(PythonAst ast, int version) {
+            NotifyAnalysisBegins();
+            var walker = Analyze(ast);
+            var analysis = new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            NotifyAnalysisComplete(analysis);
+        }
 
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
