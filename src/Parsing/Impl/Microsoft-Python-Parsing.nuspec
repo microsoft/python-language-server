@@ -15,7 +15,7 @@
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>Python</tags>
     <dependencies>
-      <dependency id="Microsoft.Extensions.FileSystemGlobbing" version="2.2" />
+      <dependency id="Microsoft.Extensions.FileSystemGlobbing" version="3.0.0" />
     </dependencies>
   </metadata>
   <files>
