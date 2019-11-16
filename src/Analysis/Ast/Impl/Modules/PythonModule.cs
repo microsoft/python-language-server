@@ -22,10 +22,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -298,7 +299,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
-        private void Parse() {
+        protected virtual void Parse() {
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
 
@@ -309,12 +310,21 @@ namespace Microsoft.Python.Analysis.Modules {
             _parsingTask = Task.Run(() => ParseAndLogExceptions(_linkedParseCts.Token), _linkedParseCts.Token);
         }
 
-        private void ParseAndLogExceptions(CancellationToken cancellationToken) {
+        protected void ParseAndLogExceptions(CancellationToken cancellationToken) {
             try {
                 Parse(cancellationToken);
             } catch (Exception ex) when (!(ex is OperationCanceledException)) {
                 Log?.Log(TraceEventType.Warning, $"Exception while parsing {FilePath}: {ex}");
                 throw;
+            }
+        }
+
+        protected virtual void Analyze(PythonAst ast, int version) {
+            if (ContentState < State.Analyzing) {
+                ContentState = State.Analyzing;
+
+                var analyzer = Services.GetService<IPythonAnalyzer>();
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
         }
 
@@ -338,7 +348,6 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             var ast = parser.ParseFile(Uri);
-
             // Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name} ({ModuleType})");
 
             lock (_syncObj) {
@@ -363,13 +372,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             NewAst?.Invoke(this, EventArgs.Empty);
-
-            if (ContentState < State.Analyzing) {
-                ContentState = State.Analyzing;
-
-                var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
-            }
+            Analyze(ast, version);
 
             lock (_syncObj) {
                 _parsingTask = null;
@@ -412,6 +415,14 @@ namespace Microsoft.Python.Analysis.Modules {
                     }
                 }
             }
+        }
+
+        public ModuleWalker Analyze(PythonAst ast) {
+            var eval = new ExpressionEval(Services, this, ast);
+            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
+            ast.Walk(walker);
+            walker.Complete();
+            return walker;
         }
 
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {

@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IUIService _ui;
+        private BuiltinsPythonModule _builtins;
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
@@ -53,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(Interpreter.LanguageVersion);
         public ImmutableArray<PythonLibraryPath> LibraryPaths { get; private set; } = ImmutableArray<PythonLibraryPath>.Empty;
 
-        public IBuiltinsPythonModule BuiltinsModule { get; private set; }
+        public IBuiltinsPythonModule BuiltinsModule => _builtins;
 
         public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken = default) {
             foreach (var module in _specialized.Values) {
@@ -191,12 +192,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public bool IsSpecializedModule(string fullName, string modulePath = null)
             => _specialized.ContainsKey(fullName);
 
-        private async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
-            var analyzer = Services.GetService<IPythonAnalyzer>();
-            await analyzer.GetAnalysisAsync(BuiltinsModule, Timeout.Infinite, cancellationToken);
-
+        private void AddBuiltinTypesToPathResolver() {
             Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "Builtins analysis did not complete correctly.");
-
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             var value = builtinModuleNamesMember is IVariable variable ? variable.Value : builtinModuleNamesMember;
@@ -228,16 +225,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots, cancellationToken);
 
             if (!builtinsIsCreated) {
-                var builtinsModule = CreateBuiltinsModule(Services, Interpreter, StubCache);
-                BuiltinsModule = builtinsModule;
-                builtinsRef = new ModuleRef(builtinsModule);
+                _builtins = CreateBuiltinsModule(Services, Interpreter, StubCache);
+                builtinsRef = new ModuleRef(_builtins);
+                _builtins.Initialize();
             }
 
             Modules[BuiltinModuleName] = builtinsRef;
-            await AddBuiltinTypesToPathResolverAsync(cancellationToken);
+            AddBuiltinTypesToPathResolver();
         }
 
-        private static IBuiltinsPythonModule CreateBuiltinsModule(IServiceContainer services, IPythonInterpreter interpreter, IStubCache stubCache) {
+        private static BuiltinsPythonModule CreateBuiltinsModule(IServiceContainer services, IPythonInterpreter interpreter, IStubCache stubCache) {
             var moduleName = BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion);
             var modulePath = stubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
             return new BuiltinsPythonModule(moduleName, modulePath, services);

@@ -497,11 +497,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis AnalyzeModule(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
-            var eval = new ExpressionEval(_services, module, ast);
-            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
-            ast.Walk(walker);
-            walker.Complete();
-            return CreateAnalysis(node, (IDocument)module, ast, version, walker);
+            var analysis = _analyzer.TryRestoreCachedAnalysis(module);
+            if (analysis != null) {
+                MarkNodeWalked(node);
+                return analysis;
+            }
+
+            if (module is IAnalyzable analyzable) {
+                var walker = analyzable.Analyze(ast);
+                return CreateAnalysis(node, (IDocument)module, ast, version, walker);
+            }
+            return new EmptyAnalysis(_services, (IDocument)module);
         }
 
         private bool MarkNodeWalked(IDependencyChainNode node) {

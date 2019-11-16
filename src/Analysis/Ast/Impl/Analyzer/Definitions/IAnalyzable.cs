@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Parsing.Ast;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
@@ -22,6 +25,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Notifies document that analysis is about to begin.
         /// </summary>
         void NotifyAnalysisBegins();
+
+        /// <summary>
+        /// Performs standard analysis pass. Does not include any restoration from databases.
+        /// </summary>
+        ModuleWalker Analyze(PythonAst ast);
 
         /// <summary>
         /// Notifies document that its analysis is now complete.
