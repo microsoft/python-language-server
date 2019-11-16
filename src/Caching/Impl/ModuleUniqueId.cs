@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -69,14 +71,31 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
             }
 
-            if (!string.IsNullOrEmpty(filePath)) {
-                var index = filePath.IndexOfOrdinal(".dist-info");
-                if (index > 0) {
+            if (!string.IsNullOrEmpty(filePath) && modulePathType == PythonLibraryPathType.Site) {
+                // Module can be a submodule of a versioned package. In this case we want to use
+                // version of the enclosing package so we have to look up the chain of folders.
+                var moduleRootName = moduleName.Split('.')[0];
+                var moduleFilesFolder = Path.GetDirectoryName(filePath);
+                var installationFolder = Path.GetDirectoryName(moduleFilesFolder);
+
+                var versionFolder = installationFolder;
+                while (!string.IsNullOrEmpty(versionFolder)) {
                     // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
                     // Example: 'requests' and 'requests-2.21.0.dist-info'.
                     // TODO: for egg (https://github.com/microsoft/python-language-server/issues/196), consider *.egg-info
-                    var dash = filePath.IndexOf('-');
-                    id = $"{moduleName}({filePath.Substring(dash + 1, index - dash - 1)})";
+                    var folders = fs.GetFileSystemEntries(versionFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)
+                        .Select(Path.GetFileName)
+                        .Where(n => n.StartsWith(moduleRootName, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
+                        .ToArray();
+
+                    if (folders.Length == 1) {
+                        var fileName = Path.GetFileNameWithoutExtension(folders[0]);
+                        var dash = fileName.IndexOf('-');
+                        id = $"{moduleName}({fileName.Substring(dash + 1)})";
+                        break;
+                    }
+                    // Move up if nothing is found.
+                    versionFolder = Path.GetDirectoryName(versionFolder);
                 }
             }
 

@@ -497,12 +497,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis AnalyzeModule(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
-            var analysis = _analyzer.TryRestoreCachedAnalysis(module);
-            if (analysis != null) {
-                MarkNodeWalked(node);
-                return analysis;
-            }
-
             if (module is IAnalyzable analyzable) {
                 var walker = analyzable.Analyze(ast);
                 return CreateAnalysis(node, (IDocument)module, ast, version, walker);
