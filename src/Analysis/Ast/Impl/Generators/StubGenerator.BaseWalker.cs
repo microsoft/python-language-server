@@ -35,11 +35,17 @@ namespace Microsoft.Python.Analysis.Generators {
             protected readonly ILogger Logger;
             protected readonly IPythonModule Module;
             protected readonly PythonAst Ast;
+            protected readonly CancellationToken CancellationToken;
 
-            public BaseWalker(ILogger logger, IPythonModule module, PythonAst ast, string original) {
+            public BaseWalker(ILogger logger,
+                              IPythonModule module,
+                              PythonAst ast,
+                              string original,
+                              CancellationToken cancellationToken) {
                 Logger = logger;
                 Module = module;
                 Ast = ast;
+                CancellationToken = cancellationToken;
 
                 _original = original;
                 _sb = new StringBuilder();
@@ -47,8 +53,26 @@ namespace Microsoft.Python.Analysis.Generators {
                 _lastIndexProcessed = 0;
             }
 
-            public virtual string GetCode(CancellationToken cancellationToken) {
-                cancellationToken.ThrowIfCancellationRequested();
+            public override bool DefaultWalk(Node node, Node parent) {
+                // our design is walker logic is in each node itself and 
+                // we implement visitor that control walking based on return value
+                // here, we use a trick where we inject cancellation check in the default 
+                // visitor
+                CancellationToken.ThrowIfCancellationRequested();
+                return base.DefaultWalk(node, parent);
+            }
+
+            public override void DefaultPostWalk(Node node, Node parent) {
+                // our design is walker logic is in each node itself and 
+                // we implement visitor that control walking based on return value
+                // here, we use a trick where we inject cancellation check in the default 
+                // visitor
+                CancellationToken.ThrowIfCancellationRequested();
+                base.DefaultPostWalk(node, parent);
+            }
+
+            public virtual string GetCode() {
+                CancellationToken.ThrowIfCancellationRequested();
 
                 // get code that are not left in original code
                 AppendOriginalText(_original.Length);

@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
@@ -23,8 +24,13 @@ namespace Microsoft.Python.Analysis.Generators {
         private sealed class RemovePrivateMemberWalker : BaseWalker {
             private readonly HashSet<string> _allVariables;
 
-            public RemovePrivateMemberWalker(ILogger logger, IPythonModule module, PythonAst ast, HashSet<string> allVariables, string original)
-                : base(logger, module, ast, original) {
+            public RemovePrivateMemberWalker(ILogger logger,
+                                             IPythonModule module,
+                                             PythonAst ast,
+                                             HashSet<string> allVariables,
+                                             string original,
+                                             CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
                 _allVariables = allVariables;
             }
 

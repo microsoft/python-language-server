@@ -24,8 +24,8 @@ namespace Microsoft.Python.Analysis.Generators {
         private sealed class ConvertDocCommentWalker : BaseWalker {
             private string _moduleDocString;
 
-            public ConvertDocCommentWalker(ILogger logger, IPythonModule module, PythonAst ast, string original)
-                : base(logger, module, ast, original) {
+            public ConvertDocCommentWalker(ILogger logger, IPythonModule module, PythonAst ast, string original, CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
                 _moduleDocString = null;
             }
 
@@ -59,10 +59,8 @@ namespace Microsoft.Python.Analysis.Generators {
                 return base.Walk(node, parent);
             }
 
-            public override string GetCode(CancellationToken cancellationToken) {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                return GetModuleDocString() + base.GetCode(cancellationToken);
+            public override string GetCode() {
+                return GetModuleDocString() + base.GetCode();
 
                 string GetModuleDocString() {
                     if (_moduleDocString == null) {

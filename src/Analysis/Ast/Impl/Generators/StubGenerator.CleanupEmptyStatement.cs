@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Threading;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
@@ -22,8 +23,8 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Generators {
     public sealed partial class StubGenerator {
         private sealed class CleanupEmptyStatement : BaseWalker {
-            public CleanupEmptyStatement(ILogger logger, IPythonModule module, PythonAst ast, string original)
-                : base(logger, module, ast, original) {
+            public CleanupEmptyStatement(ILogger logger, IPythonModule module, PythonAst ast, string original, CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
             }
 
             public override bool Walk(ClassDefinition node, Node parent) {

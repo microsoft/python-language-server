@@ -63,16 +63,18 @@ namespace Microsoft.Python.Analysis.Generators {
 
             var code = Scrape(interpreter, logger, module, extraScrapeArguments, cancellationToken);
 
-            // ordering is important since one might remove info the other needs. it is hard to make this not order sensitive because
-            // one can't have consistent data as code being transformed with current python data analysis where it doesn't support
-            // creating new universe with transformed code
-            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupImportWalker(logger, module, ast, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new RemovePrivateMemberWalker(logger, module, ast, allVariablesMap, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new ConvertDocCommentWalker(logger, module, ast, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupEmptyStatement(logger, module, ast, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new OrganizeMemberWalker(logger, module, ast, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new TypeInfoWalker(logger, module, ast, code), cancellationToken);
-            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupWhitespaceWalker(logger, module, ast, code), cancellationToken);
+            // it requires multiple passes since we don't support tree tranformation so we can't make nested changes unless
+            // we reparse everything to get new tree
+            // also, ordering is important since one might remove info the other needs. it is hard to make this not order sensitive because
+            // one can't have consistent analysis data as code being transformed with current python engine. 
+            // it would be nice if we can support creating new universe with changes so one can get full semantic data from temporary changes
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupImportWalker(logger, module, ast, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new RemovePrivateMemberWalker(logger, module, ast, allVariablesMap, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new ConvertDocCommentWalker(logger, module, ast, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupEmptyStatement(logger, module, ast, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new OrganizeMemberWalker(logger, module, ast, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new TypeInfoWalker(logger, module, ast, code, cancellationToken), cancellationToken);
+            code = Transform(code, interpreter.LanguageVersion, ast => new CleanupWhitespaceWalker(logger, module, ast, code, cancellationToken), cancellationToken);
 
             return code;
         }
@@ -107,7 +109,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 var walker = walkerFactory(ast);
                 ast.Walk(walker);
 
-                return walker.GetCode(cancellationToken);
+                return walker.GetCode();
             }
         }
 

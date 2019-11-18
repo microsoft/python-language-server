@@ -33,8 +33,8 @@ namespace Microsoft.Python.Analysis.Generators {
             private readonly LinkedList<(int start, int indentation)> _indentations;
             private readonly Stack<int> _indentationStack;
 
-            public CleanupWhitespaceWalker(ILogger logger, IPythonModule module, PythonAst ast, string original)
-                : base(logger, module, ast, original) {
+            public CleanupWhitespaceWalker(ILogger logger, IPythonModule module, PythonAst ast, string original, CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
                 // it would be nice if there is a general formatter one can use to just format code rather than
                 // having this kind of custom walker for feature which does simple formatting
                 _indentations = new LinkedList<(int start, int indentation)>();
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 PopIndentation(node, parent);
             }
 
-            public override string GetCode(CancellationToken cancellationToken) {
+            public override string GetCode() {
                 // get flat statement list
                 var statements = Ast.ChildNodesDepthFirst().Where(Candidate).ToList();
 
@@ -72,6 +72,8 @@ namespace Microsoft.Python.Analysis.Generators {
                     GetSpan(previous: null, firstStatement));
 
                 for (var i = 1; i < statements.Count; i++) {
+                    CancellationToken.ThrowIfCancellationRequested();
+
                     var previous = statements[i - 1];
                     var current = statements[i];
 
@@ -93,7 +95,7 @@ namespace Microsoft.Python.Analysis.Generators {
                     ReplaceNodeWithText(spacesBetween, span);
                 }
 
-                return base.GetCode(cancellationToken);
+                return base.GetCode();
 
                 bool Candidate(Node node) {
                     switch (node) {
@@ -137,11 +139,15 @@ namespace Microsoft.Python.Analysis.Generators {
             }
 
             private void PushIndentation(ScopeStatement node, int headerIndex) {
+                CancellationToken.ThrowIfCancellationRequested();
+
                 _indentationStack.Push(ComputeIndentation(node));
                 _indentations.AddLast((headerIndex, _indentationStack.Peek()));
             }
 
             private void PopIndentation(ScopeStatement node, Node parent) {
+                CancellationToken.ThrowIfCancellationRequested();
+
                 _indentationStack.Pop();
 
                 var indentation = _indentationStack.Count == 0 ? 0 : _indentationStack.Peek();

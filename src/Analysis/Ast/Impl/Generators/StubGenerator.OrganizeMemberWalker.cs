@@ -27,8 +27,8 @@ namespace Microsoft.Python.Analysis.Generators {
         private sealed class OrganizeMemberWalker : BaseWalker {
             private readonly Dictionary<Node, List<Node>> _assignments;
 
-            public OrganizeMemberWalker(ILogger logger, IPythonModule module, PythonAst ast, string original)
-                : base(logger, module, ast, original) {
+            public OrganizeMemberWalker(ILogger logger, IPythonModule module, PythonAst ast, string original, CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
                 _assignments = new Dictionary<Node, List<Node>>();
             }
 
@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 return false;
             }
 
-            public override string GetCode(CancellationToken cancellationToken) {
+            public override string GetCode() {
                 var codeToSkipQueue = new SortedList<int, Node>();
 
                 // put attributes top and then other members
@@ -58,6 +58,8 @@ namespace Microsoft.Python.Analysis.Generators {
                     // indentation is not correct if option is set to tab
                     var indentationString = new string(' ', indentation);
                     for (var i = 0; i < entry.Value.Count; i++) {
+                        CancellationToken.ThrowIfCancellationRequested();
+
                         var node = entry.Value[i];
                         AppendText($"{(i == 0 ? string.Empty : indentationString)}" + GetOriginalText(node.IndexSpan) + Environment.NewLine, index);
                         codeToSkipQueue.Add(node.StartIndex, node);
@@ -72,7 +74,7 @@ namespace Microsoft.Python.Analysis.Generators {
                     AppendTextUpto(codeToSkipQueue, codeToSkipQueue.Last().Value.EndIndex);
                 }
 
-                return base.GetCode(cancellationToken);
+                return base.GetCode();
             }
 
             private void AppendTextUpto(SortedList<int, Node> codeToSkipQueue, int lastIndex) {

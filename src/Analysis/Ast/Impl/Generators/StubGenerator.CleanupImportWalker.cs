@@ -29,8 +29,8 @@ namespace Microsoft.Python.Analysis.Generators {
             private readonly Dictionary<string, List<string>> _importMap;
             private readonly HashSet<string> _importToKeepInOriginalForm;
 
-            public CleanupImportWalker(ILogger logger, IPythonModule module, PythonAst ast, string original)
-                : base(logger, module, ast, original) {
+            public CleanupImportWalker(ILogger logger, IPythonModule module, PythonAst ast, string original, CancellationToken cancellationToken)
+                : base(logger, module, ast, original, cancellationToken) {
                 _fromMap = new Dictionary<string, string>();
                 _importMap = new Dictionary<string, List<string>>();
                 _importToKeepInOriginalForm = new HashSet<string>();
@@ -102,9 +102,8 @@ namespace Microsoft.Python.Analysis.Generators {
                 }
             }
 
-            public override string GetCode(CancellationToken cancellationToken) {
-                cancellationToken.ThrowIfCancellationRequested();
-                return GetImportStatements() + base.GetCode(cancellationToken);
+            public override string GetCode() {
+                return GetImportStatements() + base.GetCode();
             }
 
             private string GetImportStatements() {
