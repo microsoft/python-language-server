@@ -44,9 +44,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        public void HandleWhile(WhileStatement node) {
+        public bool HandleWhile(WhileStatement node) {
             node.Body?.Walk(Walker);
             node.ElseStatement?.Walk(Walker);
+            return false;
         }
     }
 }

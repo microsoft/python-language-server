@@ -49,9 +49,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                         HandleNonLocal(nls);
                         break;
                     case AugmentedAssignStatement augs:
-                        _suppressDiagnostics = true;
                         augs.Left?.Walk(new ExpressionWalker(this));
-                        _suppressDiagnostics = false;
                         augs.Right?.Walk(new ExpressionWalker(this));
                         break;
                     case AssignmentStatement asst:

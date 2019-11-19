@@ -480,7 +480,7 @@ def Method():
                     serviceManager.GetService<IIdleTimeService>());
 
                 // make sure index is done
-                await indexManager.IndexWorkspace(analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver);
+                await indexManager.IndexSnapshot(analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver);
 
                 serviceManager.AddService(indexManager);
             }

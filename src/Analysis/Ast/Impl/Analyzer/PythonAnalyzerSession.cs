@@ -527,11 +527,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return analysis;
             }
 
-            var eval = new ExpressionEval(_services, module, ast);
-            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
-            ast.Walk(walker);
-            walker.Complete();
-            return CreateAnalysis(node, (IDocument)module, ast, version, walker);
+            if (module is IAnalyzable analyzable) {
+                var walker = analyzable.Analyze(ast);
+                return CreateAnalysis(node, (IDocument)module, ast, version, walker);
+            }
+            return new EmptyAnalysis(_services, (IDocument)module);
         }
 
         private bool MarkNodeWalked(IDependencyChainNode node) {

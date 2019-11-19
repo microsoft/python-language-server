@@ -26,11 +26,6 @@
     <RuntimeIdentifiers>win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
-  <!-- Signing -->
-  <PropertyGroup>
-    <MicroBuild_DoNotStrongNameSign>true</MicroBuild_DoNotStrongNameSign>
-  </PropertyGroup>
-
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);SIGN</DefineConstants>
     <SignAssembly>true</SignAssembly>

@@ -70,12 +70,20 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public int ReIndexingDelay { get; set; } = DefaultReIndexDelay;
 
-        public Task IndexWorkspace(PathResolverSnapshot snapshot = null, CancellationToken ct = default) {
+        public Task IndexWorkspace(CancellationToken ct = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _disposeToken.CancellationToken);
             var linkedCt = linkedCts.Token;
             return Task.Run(() => {
                 var userFiles = WorkspaceFiles();
                 CreateIndices(userFiles, _userCodeSymbolIndex, linkedCt);
+            }, linkedCt).ContinueWith(_ => linkedCts.Dispose());
+        }
+
+        public Task IndexSnapshot(PathResolverSnapshot snapshot, CancellationToken ct = default) {
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _disposeToken.CancellationToken);
+            var linkedCt = linkedCts.Token;
+            return Task.Run(() => {
+                var userFiles = WorkspaceFiles();
 
                 // index library files if asked
                 CreateIndices(LibraryFiles(snapshot).Except(userFiles, FileSystemInfoComparer.Instance), _libraryCodeSymbolIndex, linkedCt);
