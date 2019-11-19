@@ -26,7 +26,7 @@
   <Target Name="CoreCompile" />
   <Target Name="CopyFilesToOutputDirectory" />
 
-  <ItemGroup Condition="$(SignParser)">
+  <ItemGroup Condition="$(SignServer)">
     <SignFiles Include="$(OutputPath)\Microsoft.Python.Core.dll" />
     <SignFiles Include="$(OutputPath)\Microsoft.Python.Parsing.dll" />
   </ItemGroup>
@@ -49,7 +49,7 @@
       <FilesToSign Include="@(SignFiles)">
         <Authenticode Condition="%(Extension) == '.nupkg'">NuGet</Authenticode>
         <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft400</Authenticode>
-        <StrongName>StrongName</StrongName>
+        <StrongName Condition="%(Extension) != '.nupkg'">StrongName</StrongName>
       </FilesToSign>
     </ItemGroup>
     <Error Condition="@(_Missing) != ''" Text="Following files are missing: @(_Missing,'%0A')" />
