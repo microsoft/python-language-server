@@ -136,10 +136,6 @@ namespace Microsoft.Python.Analysis.Generators {
                 return Ast;
             }
 
-            protected static bool IsPrivate(string identifier, HashSet<string> allVariables) {
-                return identifier.StartsWith("_") && !allVariables.Contains(identifier);
-            }
-
             protected static bool IsDocumentation(Statement statement) {
                 return statement is ExpressionStatement exprStmt && exprStmt.Expression is ConstantExpression;
             }

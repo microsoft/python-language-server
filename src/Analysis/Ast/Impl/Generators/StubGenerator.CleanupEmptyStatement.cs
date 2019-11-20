@@ -43,17 +43,26 @@ namespace Microsoft.Python.Analysis.Generators {
                 return base.Walk(node, parent);
             }
 
-            public override bool Walk(EmptyStatement node, Node parent) {
+            // multiple lines such as doc comment + statement
+            public override bool Walk(ErrorStatement node, Node parent) => Handle(node, parent);
+            public override bool Walk(ReturnStatement node, Node parent) => Handle(node, parent);
+            public override bool Walk(EmptyStatement node, Node parent) => Handle(node, parent);
+
+            private bool Handle(Node node, Node parent) {
                 if (parent is SuiteStatement && GetParent(parent) is FunctionDefinition) {
                     return ReplaceNodeWithText("...", node.IndexSpan);
                 }
 
-                return base.Walk(node, parent);
+                return false;
             }
 
             private bool HandleBody(int index, Statement body) {
+                // single line case
                 if (body is ErrorStatement ||
-                    (body is SuiteStatement suite && suite.Statements.Count == 1 && suite.Statements[0] is EmptyStatement)) {
+                    (body is SuiteStatement suite && suite.Statements.Count == 1 &&
+                    (suite.Statements[0] is EmptyStatement ||
+                     suite.Statements[0] is ReturnStatement))) {
+
                     // keep up to header and
                     // get rid of anything after header
                     var span = (index + 1 <= body.EndIndex) ? IndexSpan.FromBounds(index + 1, body.EndIndex) : IndexSpan.FromBounds(index, index);
