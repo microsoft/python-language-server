@@ -53,5 +53,12 @@ namespace Microsoft.Python.Analysis {
         /// Defines level of caching analysis engine will maintain.
         /// </summary>
         public AnalysisCachingLevel AnalysisCachingLevel { get; set; }
+
+        /// <summary>
+        /// Tells if source module should be analyzed or, if stub is present,
+        /// the stub becomes primary source of information on types and source
+        /// modules would be used only as documentation provider.
+        /// </summary>
+        public bool StubOnlyAnalysis { get; set; }
     }
 }

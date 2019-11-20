@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -62,7 +61,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
-                _table.Add(new ClassEvaluator(_eval, cd));
+                if (!_eval.AnalysisOptions.StubOnlyAnalysis) {
+                    _table.Add(new ClassEvaluator(_eval, cd));
+                }
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
@@ -70,8 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!string.IsNullOrEmpty(cd.NameExpression?.Name) &&
-                _typeMap.ContainsKey(cd)) {
+            if (!string.IsNullOrEmpty(cd.NameExpression?.Name) && _typeMap.ContainsKey(cd)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
@@ -138,7 +138,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
-            if (!_table.ReplacedByStubs.Contains(fd)) {
+            if (!_table.ReplacedByStubs.Contains(fd) && !_eval.AnalysisOptions.StubOnlyAnalysis) {
                 var stubOverload = GetOverloadFromStub(fd);
                 if (stubOverload != null) {
                     var documentation = fd.GetDocumentation();
@@ -156,7 +156,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
-                _table.Add(new FunctionEvaluator(_eval, overload));
+                if (!_eval.AnalysisOptions.StubOnlyAnalysis) {
+                    _table.Add(new FunctionEvaluator(_eval, overload));
+                }
             }
         }
 
@@ -172,7 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private bool TryAddProperty(FunctionDefinition node, PythonType declaringType) {
             // We can't add a property to an unknown type. Fallback to a regular function for now.
-            // TOOD: Decouple declaring types from the property.
+            // TODO: Decouple declaring types from the property.
             if (declaringType.IsUnknown()) {
                 return false;
             }

@@ -46,6 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             CurrentScope = GlobalScope;
             DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
+            AnalysisOptions = services.GetService<IAnalysisOptionsProvider>()?.Options;
         }
 
         public GlobalScope GlobalScope { get; }
@@ -56,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonType UnknownType => Interpreter.UnknownType;
         public Location DefaultLocation { get; }
         public IPythonModule BuiltinsModule => Interpreter.ModuleResolution.BuiltinsModule;
-
+        public AnalysisOptions AnalysisOptions { get; }
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
