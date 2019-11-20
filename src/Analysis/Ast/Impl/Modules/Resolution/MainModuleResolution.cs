@@ -106,7 +106,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
             if (TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
-                Analyzer.InvalidateAnalysis(stub);
+                // Analyzer.InvalidateAnalysis(stub);
             } else {
                 // If nothing found, try Typeshed.
                 stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);

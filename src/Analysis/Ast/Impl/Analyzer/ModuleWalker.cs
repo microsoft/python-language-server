@@ -79,9 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var rightVar = Eval.GetValueFromExpression(node.Right);
-            var right = rightVar as IPythonCollection;
-
-            if (right == null) {
+            if (!(rightVar is IPythonCollection right)) {
                 _allIsUsable = false;
                 return;
             }
