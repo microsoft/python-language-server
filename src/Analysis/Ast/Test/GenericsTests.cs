@@ -515,9 +515,12 @@ class Box(Generic[_T]):
 
 boxed = Box(1234)
 x = boxed.get()
+z = boxed.v
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z")
                 .Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
