@@ -200,7 +200,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _cancellationToken.ThrowIfCancellationRequested();
 
             SymbolTable.EvaluateAll();
-            SymbolTable.ReplacedByStubs.Clear();
             new StubMerger(Eval).MergeStub(_stubAnalysis, _cancellationToken);
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)

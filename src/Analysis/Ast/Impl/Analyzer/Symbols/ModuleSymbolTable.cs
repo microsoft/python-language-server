@@ -30,8 +30,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly Dictionary<ScopeStatement, MemberEvaluator> _evaluators = new Dictionary<ScopeStatement, MemberEvaluator>();
         private readonly HashSet<ScopeStatement> _processed = new HashSet<ScopeStatement>();
 
-        public HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
-
         public IEnumerable<KeyValuePair<ScopeStatement, MemberEvaluator>> Evaluators => _evaluators.ToArray();
         public void Add(MemberEvaluator e) => _evaluators[e.Target] = e;
         public bool Contains(ScopeStatement node) => _evaluators.ContainsKey(node) || _processed.Contains(node);

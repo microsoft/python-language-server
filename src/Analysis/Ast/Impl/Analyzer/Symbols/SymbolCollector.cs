@@ -136,21 +136,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
-            // Check if function exists in stubs. If so, take overload from stub
-            // and the documentation from this actual module.
-            if (!_table.ReplacedByStubs.Contains(fd) && !_eval.AnalysisOptions.StubOnlyAnalysis) {
-                var stubOverload = GetOverloadFromStub(fd);
-                if (stubOverload != null) {
-                    var documentation = fd.GetDocumentation();
-                    if (!string.IsNullOrEmpty(documentation)) {
-                        stubOverload.SetDocumentation(documentation);
-                    }
-                    addOverload(stubOverload);
-                    _table.ReplacedByStubs.Add(fd);
-                    return;
-                }
-            }
-
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
@@ -160,16 +145,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     _table.Add(new FunctionEvaluator(_eval, overload));
                 }
             }
-        }
-
-        private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {
-            var t = GetMemberFromStub(node.Name).GetPythonType();
-            if (t is IPythonFunctionType f) {
-                return f.Overloads
-                    .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Count(p => !p.IsPositionalOnlyMarker));
-            }
-            return null;
         }
 
         private bool TryAddProperty(FunctionDefinition node, PythonType declaringType) {

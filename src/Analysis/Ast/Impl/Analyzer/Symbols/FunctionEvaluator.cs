@@ -47,9 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            var stub = SymbolTable.ReplacedByStubs.Contains(Target)
-                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
-                       || Module.ModuleType == ModuleType.Specialized;
+            var stub = _function.DeclaringModule.ModuleType == ModuleType.Stub;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 var returnType = TryDetermineReturnValue();
