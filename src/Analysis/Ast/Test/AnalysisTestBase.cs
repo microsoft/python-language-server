@@ -37,17 +37,27 @@ using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
-    public abstract class AnalysisTestBase {
+    public abstract class AnalysisTestBase: IDisposable {
+        private readonly CancellationTokenSource _testCts;
+
         protected const int AnalysisTimeoutInMS = 1000 * 60;
 
         protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(AnalysisTimeoutInMS);
-
-        private TimeSpan GetAnalysisTimeout() => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : AnalysisTimeout;
 
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
+
+        protected CancellationToken TestCancellationToken => _testCts.Token;
+
+        protected AnalysisTestBase() {
+            _testCts = new CancellationTokenSource(Debugger.IsAttached ? Timeout.InfiniteTimeSpan : AnalysisTimeout);
+        }
+
+        public void Dispose() {
+            _testCts.Dispose();
+        }
 
         protected ServiceManager CreateServiceManager() {
             Services = new ServiceManager();
@@ -163,10 +173,8 @@ namespace Microsoft.Python.Analysis.Tests {
             TestLogger.Log(TraceEventType.Information, "Test: Analysis begin.");
 
             IDocumentAnalysis analysis;
-            using (var cts = new CancellationTokenSource(GetAnalysisTimeout())) {
-                await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync(cts.Token);
-                analysis = await doc.GetAnalysisAsync(-1, cts.Token);
-            }
+            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync(TestCancellationToken);
+            analysis = await doc.GetAnalysisAsync(-1, TestCancellationToken);
 
             analysis.Should().NotBeNull();
             TestLogger.Log(TraceEventType.Information, "Test: Analysis end.");
@@ -176,10 +184,8 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected async Task<IDocumentAnalysis> GetDocumentAnalysisAsync(IDocument document) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
-            using (var cts = new CancellationTokenSource(GetAnalysisTimeout())) {
-                await analyzer.WaitForCompleteAnalysisAsync(cts.Token);
-                return await document.GetAnalysisAsync(Timeout.Infinite, cts.Token);
-            }
+            await analyzer.WaitForCompleteAnalysisAsync(TestCancellationToken);
+            return await document.GetAnalysisAsync(Timeout.Infinite, TestCancellationToken);
         }
     }
 }

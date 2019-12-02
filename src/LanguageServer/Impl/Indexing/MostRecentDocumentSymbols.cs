@@ -154,10 +154,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private async Task<IReadOnlyList<HierarchicalSymbol>> ParseAsync(CancellationToken cancellationToken) {
             try {
                 var ast = await _indexParser.ParseAsync(_path, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
-                ast.Walk(walker);
-                return walker.Symbols;
+                if (ast != null) {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
+                    ast.Walk(walker);
+                    return walker.Symbols;
+                }
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
                 Trace.TraceError(e.Message);
             }
