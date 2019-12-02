@@ -36,6 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly AnalysisOptions _analysisOptions;
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -46,7 +47,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             CurrentScope = GlobalScope;
             DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
-            AnalysisOptions = services.GetService<IAnalysisOptionsProvider>()?.Options;
+
+            var optionsOptovider = services.GetService<IAnalysisOptionsProvider>();
+            if (optionsOptovider != null) {
+                _analysisOptions = optionsOptovider.Options;
+            } else {
+                _analysisOptions = new AnalysisOptions {
+                    AnalysisCachingLevel = AnalysisCachingLevel.None,
+                    StubOnlyAnalysis = true,
+                    KeepLibraryAst = false,
+                    KeepLibraryLocalVariables = false,
+                    LintingEnabled = true
+                };
+            }
         }
 
         public GlobalScope GlobalScope { get; }
@@ -57,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonType UnknownType => Interpreter.UnknownType;
         public Location DefaultLocation { get; }
         public IPythonModule BuiltinsModule => Interpreter.ModuleResolution.BuiltinsModule;
-        public AnalysisOptions AnalysisOptions { get; }
+        public bool StubOnlyAnalysis => _analysisOptions.StubOnlyAnalysis && Module.Stub != null && Module.ModuleType != ModuleType.User;
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {

@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
-                if (!_eval.AnalysisOptions.StubOnlyAnalysis) {
+                if (!_eval.StubOnlyAnalysis) {
                     _table.Add(new ClassEvaluator(_eval, cd));
                 }
                 // Open class scope
@@ -141,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
-                if (!_eval.AnalysisOptions.StubOnlyAnalysis) {
+                if (!_eval.StubOnlyAnalysis) {
                     _table.Add(new FunctionEvaluator(_eval, overload));
                 }
             }
