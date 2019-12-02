@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-#define WAIT_FOR_DEBUGGER
+// #define WAIT_FOR_DEBUGGER
 
 using System;
 using System.Diagnostics;
@@ -41,34 +41,34 @@ namespace Microsoft.Python.LanguageServer.Server {
                 messageFormatter.JsonSerializer.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
                 messageFormatter.JsonSerializer.Converters.Add(new UriConverter());
 
-                using (var cin = Console.OpenStandardInput())
-                using (var cout = Console.OpenStandardOutput())
-                using (var server = new Implementation.LanguageServer())
-                using (var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server)) {
-                    rpc.TraceSource.Switch.Level = SourceLevels.Error;
-                    rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
-                    var clientApp = new ClientApplication(rpc);
+                using var cin = Console.OpenStandardInput();
+                using var cout = Console.OpenStandardOutput();
+                using var server = new Implementation.LanguageServer();
+                using var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server);
 
-                    var osp = new OSPlatform();
-                    services
-                        .AddService(clientApp)
-                        .AddService(new Logger(clientApp))
-                        .AddService(new UIService(clientApp))
-                        .AddService(new ProgressService(clientApp))
-                        .AddService(new TelemetryService(clientApp))
-                        .AddService(new IdleTimeService())
-                        .AddService(osp)
-                        .AddService(new ProcessServices())
-                        .AddService(new FileSystem(osp));
+                rpc.TraceSource.Switch.Level = SourceLevels.Error;
+                rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
+                var clientApp = new ClientApplication(rpc);
 
-                    services.AddService(messageFormatter.JsonSerializer);
+                var osp = new OSPlatform();
+                services
+                    .AddService(clientApp)
+                    .AddService(new Logger(clientApp))
+                    .AddService(new UIService(clientApp))
+                    .AddService(new ProgressService(clientApp))
+                    .AddService(new TelemetryService(clientApp))
+                    .AddService(new IdleTimeService())
+                    .AddService(osp)
+                    .AddService(new ProcessServices())
+                    .AddService(new FileSystem(osp));
 
-                    var token = server.Start(services, rpc);
-                    rpc.StartListening();
+                services.AddService(messageFormatter.JsonSerializer);
 
-                    // Wait for the "exit" request, it will terminate the process.
-                    token.WaitHandle.WaitOne();
-                }
+                var token = server.Start(services, rpc);
+                rpc.StartListening();
+
+                // Wait for the "exit" request, it will terminate the process.
+                token.WaitHandle.WaitOne();
             }
         }
 
