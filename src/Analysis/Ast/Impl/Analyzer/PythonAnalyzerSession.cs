@@ -198,9 +198,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task<int> AnalyzeAffectedEntriesAsync(Stopwatch stopWatch) {
             IDependencyChainNode node;
             var remaining = 0;
-            var ace = new AsyncCountdownEvent(0);
 
             while ((node = await _walker.GetNextAsync(_analyzerCancellationToken)) != null) {
+                var taskLimitReached = false;
                 lock (_syncObj) {
                     if (_isCanceled) {
                         switch (node) {
@@ -216,18 +216,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                     }
 
-                    var taskLimitReached = _ace.Count >= _maxTaskRunning || _walker.Remaining == 1;
+                    taskLimitReached = _ace.Count >= _maxTaskRunning || _walker.Remaining == 1;
+                    _ace.AddOne();
+                }
 
-                    if (taskLimitReached) {
-                        RunAnalysis(node, stopWatch);
-                    } else {
-                        ace.AddOne();
-                        StartAnalysis(node, ace, stopWatch).DoNotWait();
-                    }
+                if (taskLimitReached) {
+                    RunAnalysis(node, stopWatch);
+                } else {
+                    StartAnalysis(node, stopWatch).DoNotWait();
                 }
             }
 
-            await ace.WaitAsync(_analyzerCancellationToken);
+            await _ace.WaitAsync(_analyzerCancellationToken);
 
             lock (_syncObj) {
                 if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
@@ -241,12 +241,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void RunAnalysis(IDependencyChainNode node, Stopwatch stopWatch)
-            => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
+            => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, stopWatch), null);
 
-        private Task StartAnalysis(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch)
-            => Task.Run(() => Analyze(node, ace, stopWatch));
+        private Task StartAnalysis(IDependencyChainNode node, Stopwatch stopWatch)
+            => Task.Run(() => Analyze(node, stopWatch));
 
-        private void Analyze(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
+        private void Analyze(IDependencyChainNode node, Stopwatch stopWatch) {
             var loopAnalysis = false;
             try {
                 switch (node) {
@@ -284,7 +284,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (!_isCanceled || loopAnalysis) {
                         _progress.ReportRemaining(_walker.Remaining);
                     }
-                    ace?.Signal();
+                    _ace.Signal();
                 }
             }
         }
