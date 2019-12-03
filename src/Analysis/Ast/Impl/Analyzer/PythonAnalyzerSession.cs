@@ -147,20 +147,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } finally {
                 stopWatch.Stop();
 
+                var isFinal = false;
                 lock (_syncObj) {
-                    _state = State.Completed;
-                    var isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0;
-                    _walker = null;
-
                     if (!_isCanceled) {
                         _progress.ReportRemaining(remaining);
-                        if (isFinal) {
-                            var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
-                            totalMilliseconds = Math.Round(totalMilliseconds, 2);
-                            (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
-                            _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
-                        }
                     }
+
+                    _state = State.Completed;
+                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0;
+                    _walker = null;
+                }
+
+                if (isFinal) {
+                    var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
+                    totalMilliseconds = Math.Round(totalMilliseconds, 2);
+                    (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
+                    _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
                 }
             }
 
@@ -273,7 +275,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             node.MarkWalked();
                             LogException(loop, exception);
                         }
-
                         break;
                 }
             } finally {
