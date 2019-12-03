@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// B[int] inherits from A[int, str] 
         /// </summary>
         public virtual IPythonType CreateSpecificType(IArgumentSet args) {
-            lock (_membersLock) {
+            lock (MembersLock) {
                 var newGenericTypeParameters = GetTypeParameters();
                 var newBases = new List<IPythonType>();
 
