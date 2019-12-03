@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
@@ -39,12 +38,13 @@ using TestUtilities;
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class MissingImportCodeActionTests : LanguageServerTestBase {
-        private CancellationTokenSource _cts = new CancellationTokenSource(); 
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            AnalysisTimeout = TimeSpan.FromMinutes(3);
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();

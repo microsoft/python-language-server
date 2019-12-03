@@ -26,7 +26,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
         protected override IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => new DiagnosticsService(s);
 
-
         protected IDiagnosticsService GetDiagnosticsService() {
             var ds = Services.GetService<IDiagnosticsService>();
             ds.PublishingDelay = 0;
