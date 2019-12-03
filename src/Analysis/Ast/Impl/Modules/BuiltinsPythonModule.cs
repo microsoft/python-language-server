@@ -67,9 +67,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
             SpecializeFunctions();
-            foreach (var n in GetMemberNames()) {
-                GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
-            }
             base.OnAnalysisComplete();
         }
 
