@@ -157,7 +157,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     _state = State.Completed;
-                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0 && !_analyzer.HasNextSession;
+                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0;
                     _walker = null;
                 }
 

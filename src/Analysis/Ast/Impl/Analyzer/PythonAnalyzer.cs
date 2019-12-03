@@ -207,11 +207,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
         #endregion
 
-        internal bool HasNextSession => _nextSession != null;
-
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            _analysisCompleteEvent.Set();
-            AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            if (_nextSession == null || _currentSession?.IsCompleted == false) {
+                _analysisCompleteEvent.Set();
+                AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            }
         }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
