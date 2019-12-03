@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IDiagnosticsService _diagnosticsService;
         private readonly IOSPlatform _platformService;
         private readonly IProgressReporter _progress;
-        private readonly IPythonAnalyzer _analyzer;
+        private readonly PythonAnalyzer _analyzer;
         private readonly ILogger _log;
         private readonly bool _forceGC;
         private readonly PathResolverSnapshot _modulesPathResolver;
@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
             _platformService = _services.GetService<IOSPlatform>();
-            _analyzer = _services.GetService<IPythonAnalyzer>();
+            _analyzer = _services.GetService<PythonAnalyzer>();
             _log = _services.GetService<ILogger>();
             _progress = progress;
 
@@ -104,17 +104,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void Start(bool analyzeEntry) {
             lock (_syncObj) {
+                if (_state == State.Completed) {
+                    return;
+                }
+
                 if (_state != State.NotStarted) {
                     analyzeEntry = false;
-                } else if (_state == State.Completed) {
-                    return;
                 } else {
                     _state = State.Started;
                 }
             }
 
             if (analyzeEntry && _entry != null) {
-                Task.Run(() => AnalyzeEntry(), _analyzerCancellationToken).DoNotWait();
+                Task.Run(AnalyzeEntry, _analyzerCancellationToken).DoNotWait();
             } else {
                 StartAsync().ContinueWith(_startNextSession, _analyzerCancellationToken).DoNotWait();
             }
@@ -144,6 +146,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             try {
                 _log?.Log(TraceEventType.Verbose, $"Analysis version {Version} of {originalRemaining} entries has started.");
                 remaining = await AnalyzeAffectedEntriesAsync(stopWatch);
+                Debug.Assert(_ace.Count == 0);
             } finally {
                 stopWatch.Stop();
 
@@ -154,14 +157,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     _state = State.Completed;
-                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0;
+                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0 && !_analyzer.HasNextSession;
                     _walker = null;
                 }
 
                 if (isFinal) {
                     var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
                     totalMilliseconds = Math.Round(totalMilliseconds, 2);
-                    (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
+                    _analyzer.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
                     _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
                 }
             }
@@ -261,26 +264,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             node.MarkWalked();
                             LogException(single.Value, exception);
                         }
-
                         break;
                     case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
                         try {
                             loopAnalysis = true;
                             AnalyzeLoop(loop, stopWatch);
                         } catch (OperationCanceledException) {
-                            //loop.Value.TryCancel(oce, _walker.Version);
-                            //LogCanceled(single.Value.Module);
                         } catch (Exception exception) {
-                            //loop.Value.TrySetException(exception, _walker.Version);
                             node.MarkWalked();
                             LogException(loop, exception);
                         }
                         break;
                 }
             } finally {
-                node.MoveNext();
-
                 lock (_syncObj) {
+                    node.MoveNext();
                     if (!_isCanceled || loopAnalysis) {
                         _progress.ReportRemaining(_walker.Remaining);
                     }
