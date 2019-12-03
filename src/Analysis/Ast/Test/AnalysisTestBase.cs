@@ -40,9 +40,7 @@ namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase: IDisposable {
         private readonly CancellationTokenSource _testCts;
 
-        protected const int AnalysisTimeoutInMS = 1000 * 60;
-
-        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(AnalysisTimeoutInMS);
+        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(1000 * 60);
 
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
