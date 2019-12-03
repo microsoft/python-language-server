@@ -20,7 +20,6 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -209,8 +208,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            _analysisCompleteEvent.Set();
-            AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            if (_nextSession == null || _currentSession?.IsCompleted == false) {
+                _analysisCompleteEvent.Set();
+                AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            }
         }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
