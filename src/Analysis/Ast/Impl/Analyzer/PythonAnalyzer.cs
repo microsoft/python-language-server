@@ -119,21 +119,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> analysisDependencies) {
             var key = new AnalysisModuleKey(module);
+            PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
-                if (!_analysisEntries.TryGetValue(key, out var entry)) {
+                if (!_analysisEntries.TryGetValue(key, out entry)) {
                     return;
                 }
-                var version = _version + 1;
-                if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
-                    AnalyzeDocument(key, entry, dependencies);
-                }
+                version = _version + 1;
+            }
+
+            if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
+                AnalyzeDocument(key, entry, dependencies);
             }
         }
 
         public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion) {
+            PythonAnalyzerEntry entry;
+            AnalysisModuleKey key;
+            int version;
+
             lock (_syncObj) {
-                var entry = GetOrCreateAnalysisEntry(module, out var key);
-                var version = _version + 1;
+                entry = GetOrCreateAnalysisEntry(module, out key);
+                version = _version + 1;
                 if (entry.BufferVersion >= bufferVersion) {
                     return;
                 }
@@ -145,10 +152,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     key = nonUserAsDocumentKey;
                     entry = documentEntry;
                 }
+            }
 
-                if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
-                    AnalyzeDocument(key, entry, dependencies);
-                }
+            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
+                AnalyzeDocument(key, entry, dependencies);
             }
         }
 
@@ -213,12 +220,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
-            if (_version > graphVersion) {
-                return;
-            }
 
-            _version = graphVersion;
-            _currentSession?.Cancel();
+            lock (_syncObj) {
+                if (_version > graphVersion) {
+                    return;
+                }
+
+                _version = graphVersion;
+                _currentSession?.Cancel();
+            }
 
             if (TryCreateSession(graphVersion, entry, out var session)) {
                 session.Start(true);
