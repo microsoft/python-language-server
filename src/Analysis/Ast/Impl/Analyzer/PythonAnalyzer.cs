@@ -208,7 +208,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            if (_nextSession == null || _currentSession?.IsCompleted == false) {
+            var analsysComplete = false;
+            lock (_syncObj) {
+                analsysComplete = !_analysisEntries.Values.ExcludeDefault().Any(e => e.NotAnalyzed) 
+                                  && _nextSession == null && (_currentSession == null || _currentSession.IsCompleted);
+            }
+            if (analsysComplete) {
                 _analysisCompleteEvent.Set();
                 AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
             }
