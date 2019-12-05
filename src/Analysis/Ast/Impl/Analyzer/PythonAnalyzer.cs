@@ -210,14 +210,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            var analisysComplete = false;
+            var analysisComplete = false;
             lock (_syncObj) {
                 var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
-                analisysComplete = notAnalyzed.Length == 0
+                analysisComplete = notAnalyzed.Length == 0
                                   && _nextSession == null
                                   && (_currentSession == null || _currentSession.IsCompleted);
             }
-            if (analisysComplete) {
+            if (analysisComplete) {
                 _analysisCompleteEvent.Set();
                 AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
             }
