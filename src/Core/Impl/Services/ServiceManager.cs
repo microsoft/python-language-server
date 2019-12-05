@@ -66,13 +66,13 @@ namespace Microsoft.Python.Core.Services {
         /// <typeparam name="T">Service type</typeparam>
         /// <returns>Service instance or null if it doesn't exist</returns>
         public T GetService<T>(Type type = null) where T : class {
-            if (_disposeToken.IsDisposed) {
+            //if (_disposeToken.IsDisposed) {
                 // Do not throw. When editor text buffer is closed, the associated service manager
                 // is disposed. However, some actions may still hold on the text buffer reference
                 // and actually determine if buffer is closed by checking if editor document 
                 // is still attached as a service.
-                return null;
-            }
+                //return null;
+            //}
 
             type = type ?? typeof(T);
             if (!_s.TryGetValue(type, out var value)) {
@@ -98,13 +98,13 @@ namespace Microsoft.Python.Core.Services {
         #region IDisposable
         public void Dispose() {
             if (_disposeToken.TryMarkDisposed()) {
-                foreach (var service in _s.Values) {
-                    if (service is Lazy<object> lazy && lazy.IsValueCreated) {
-                        (lazy.Value as IDisposable)?.Dispose();
-                    } else {
-                        (service as IDisposable)?.Dispose();
-                    }
-                }
+                //foreach (var service in _s.Values) {
+                //    if (service is Lazy<object> lazy && lazy.IsValueCreated) {
+                //        (lazy.Value as IDisposable)?.Dispose();
+                //    } else {
+                //        (service as IDisposable)?.Dispose();
+                //    }
+                //}
             }
         }
         #endregion
