@@ -79,7 +79,7 @@ namespace Microsoft.Python.Core.Services {
                 value = _s.FirstOrDefault(kvp => type.GetTypeInfo().IsAssignableFrom(kvp.Key)).Value;
             }
 
-            return (T)CheckDisposed(value as T ?? (value as Lazy<object>)?.Value);
+            return value as T ?? (value as Lazy<object>)?.Value as T;
         }
 
         public void RemoveService(object service) => _s.TryRemove(service.GetType(), out var dummy);
