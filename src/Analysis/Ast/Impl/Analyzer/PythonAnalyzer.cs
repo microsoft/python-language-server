@@ -128,7 +128,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 version = _version + 1;
             }
 
-            if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
+            var invalidate = entry.Invalidate(analysisDependencies, version, out var dependencies);
+            if (invalidate) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }
@@ -154,7 +155,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
+            var invalidate = entry.Invalidate(module, ast, bufferVersion, version, out var dependencies) || module.Analysis is EmptyAnalysis;
+            if (invalidate) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }
@@ -208,12 +210,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            var analsysComplete = false;
+            var analisysComplete = false;
             lock (_syncObj) {
-                analsysComplete = !_analysisEntries.Values.ExcludeDefault().Any(e => e.NotAnalyzed) 
-                                  && _nextSession == null && (_currentSession == null || _currentSession.IsCompleted);
+                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
+                analisysComplete = notAnalyzed.Length == 0
+                                  && _nextSession == null
+                                  && (_currentSession == null || _currentSession.IsCompleted);
             }
-            if (analsysComplete) {
+            if (analisysComplete) {
                 _analysisCompleteEvent.Set();
                 AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
             }
@@ -227,7 +231,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
 
             lock (_syncObj) {
-                if (_version > graphVersion) {
+                if (_version >= graphVersion) {
                     return;
                 }
 
