@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase: IDisposable {
         private readonly CancellationTokenSource _testCts;
 
-        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(1000 * 60);
+        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(3000 * 60);
 
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
@@ -174,12 +174,10 @@ namespace Microsoft.Python.Analysis.Tests {
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
             TestLogger.Log(TraceEventType.Information, "Test: AST end.");
-
             TestLogger.Log(TraceEventType.Information, "Test: Analysis begin.");
 
-            IDocumentAnalysis analysis;
             await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync(TestCancellationToken);
-            analysis = await doc.GetAnalysisAsync(-1, TestCancellationToken);
+            var analysis = await doc.GetAnalysisAsync(-1, TestCancellationToken);
 
             analysis.Should().NotBeNull();
             TestLogger.Log(TraceEventType.Information, "Test: Analysis end.");

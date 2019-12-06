@@ -341,8 +341,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var entry in loopNode.Values) {
                 ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
                 if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
-                    _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
-                    return;
+                    continue;
                 }
 
                 var moduleKey = new AnalysisModuleKey(module);
