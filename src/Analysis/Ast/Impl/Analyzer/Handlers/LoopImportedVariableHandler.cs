@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             EnsureModule(module);
         }
 
-        public void EnsureModule(in IPythonModule module) {
+        private void EnsureModule(in IPythonModule module) {
             if (module == null || _isCanceled()) {
                 return;
             }
@@ -104,15 +104,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         public ModuleWalker WalkModule(IPythonModule module, PythonAst ast) {
-            var analyzer = _services.GetService<IPythonAnalyzer>();
-            var analysis = analyzer.TryRestoreCachedAnalysis(module);
-            if (analysis != null) {
-                return null;
-            }
-
             // If module has stub, make sure it is processed too.
-            if (module.Stub?.Analysis is EmptyAnalysis) {
-                WalkModule(module.Stub, module.GetAst());
+            if (module.Stub?.Analysis is EmptyAnalysis && module.Stub.GetAst() != null) {
+                WalkModule(module.Stub, module.Stub.GetAst());
             }
 
             var eval = new ExpressionEval(_services, module, ast);

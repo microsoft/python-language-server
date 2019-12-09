@@ -75,18 +75,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
 
         [TestMethod, Priority(0)]
-        [ExpectedException(typeof(FileNotFoundException))]
-        public async Task ParseFileThatStopsExisting() {
-            const string testFilePath = "C:/bla.py";
-            _fileSystem.FileExists(testFilePath).Returns(true);
-            SetFileOpen(_fileSystem, testFilePath, _ => throw new FileNotFoundException());
-
-            using (var indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion)) {
-                await indexParser.ParseAsync(testFilePath);
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public void CancelParsingAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);

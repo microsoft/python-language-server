@@ -809,13 +809,12 @@ class B:
     pass
 " + allCode;
 
-            var appCode = @"
+            const string appCode = @"
 from module1 import *
 
 A().
 B().
 ";
-
             var module1Uri = TestData.GetTestSpecificUri("module1.py");
             var appUri = TestData.GetTestSpecificUri("app.py");
 

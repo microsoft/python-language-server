@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
         private VariableCollection _imported;
-        private List<Scope> _childScopes;
+        private Dictionary<ScopeStatement, Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
             Check.ArgumentNotNull(nameof(module), module);
@@ -50,7 +50,9 @@ namespace Microsoft.Python.Analysis.Values {
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
-        public IReadOnlyList<IScope> Children => _childScopes?.ToArray() ?? Array.Empty<IScope>();
+        public IReadOnlyList<IScope> Children => _childScopes?.Values.ToArray() ?? Array.Empty<IScope>();
+        public IScope GetChildScope(ScopeStatement node) => _childScopes != null && _childScopes.TryGetValue(node, out var s) ? s : null;
+
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
@@ -94,7 +96,7 @@ namespace Microsoft.Python.Analysis.Values {
             => (_imported ?? (_imported = new VariableCollection())).DeclareVariable(name, value, VariableSource.Import, location);
         #endregion
 
-        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
+        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new Dictionary<ScopeStatement, Scope>()))[s.Node] = s;
 
         private VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
 

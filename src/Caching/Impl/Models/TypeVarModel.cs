@@ -17,8 +17,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 // ReSharper disable MemberCanBePrivate.Global
@@ -32,27 +30,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public object Covariant { get; set; }
         public object Contravariant { get; set; }
 
-        public static TypeVarModel FromGeneric(IVariable v) {
+        public static TypeVarModel FromGeneric(IVariable v, IServiceContainer services) {
             var g = (IGenericTypeParameter)v.Value;
             return new TypeVarModel {
                 Id = g.Name.GetStableHash(),
                 Name = g.Name,
                 QualifiedName = g.QualifiedName,
-                Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
+                Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName(services)).ToArray(),
                 Bound = g.Bound?.QualifiedName,
                 Covariant = g.Covariant,
                 Contravariant = g.Contravariant
             };
         }
-
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            var bound = mf.ConstructType(Bound);
-            bound = bound.IsUnknown() ? null : bound;
-            return new GenericTypeParameter(Name, mf.Module,
-                Constraints.Select(mf.ConstructType).ToArray(),
-                bound, Covariant, Contravariant, default);
-        }
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
     }
 }

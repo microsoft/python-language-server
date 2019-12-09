@@ -495,59 +495,6 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
-        public async Task ChangeValue_RemoveKeys() {
-            var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A:BC", true, "B", "C");
-            resolver.ChangeValue("B", "B:C", false, "C");
-            resolver.ChangeValue("C", "C:D", false, "D");
-            resolver.ChangeValue("D", "D", false);
-
-            var walker = resolver.CreateWalker();
-            walker.MissingKeys.Should().BeEmpty();
-            var node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("D")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("C:D")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("B:C")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("A:BC")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            resolver.RemoveKeys("B", "D");
-            walker = resolver.CreateWalker();
-            walker.MissingKeys.Should().Equal("B", "D");
-
-            node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("C:D")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            node = await walker.GetNextAsync(default);
-            node.Should().HaveSingleValue("A:BC")
-                .And.HaveOnlyWalkedDependencies();
-            node.MarkWalked();
-            node.MoveNext();
-
-            walker.Remaining.Should().Be(0);
-        }
-
-        [TestMethod]
         public async Task ChangeValue_Skip() {
             var resolver = new DependencyResolver<string, string>();
             resolver.ChangeValue("A", "A:B", true, "B");

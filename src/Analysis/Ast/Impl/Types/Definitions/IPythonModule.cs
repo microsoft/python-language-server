@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Global cope of the module.
         /// </summary>
         IGlobalScope GlobalScope { get; }
-        
+
         /// <summary>
         /// If module is a stub points to the primary module.
         /// Typically used in code navigation scenarios when user
@@ -65,14 +65,11 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonModule PrimaryModule { get; }
 
         /// <summary>
-        /// Indicates if module is restored from database.
-        /// </summary>
-        bool IsPersistent { get; }
-
-        /// <summary>
         /// Defines if module belongs to Typeshed and hence resolved
         /// via typeshed module resolution service.
         /// </summary>
         bool IsTypeshed { get; }
+
+        ModuleState ModuleState { get; }
     }
 }

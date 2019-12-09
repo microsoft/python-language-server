@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -103,51 +102,28 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        public int RemoveKeys(params TKey[] keys) => RemoveKeys(ImmutableArray<TKey>.Create(keys));
-
-        public int RemoveKeys(in ImmutableArray<TKey> keys) {
+        /// <summary>
+        /// Removes everything but builtins.
+        /// </summary>
+        public void Reset() {
             lock (_syncObj) {
-                foreach (var key in keys) {
-                    if (_keys.TryGetValue(key, out var index)) {
-                        _vertices[index] = default;
-                    }
+                if (_vertices.Count > 1) {
+                    _vertices.RemoveRange(1, _vertices.Count - 1);
                 }
 
-                var oldKeysReversed = _keys.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
-                var oldVertices = new DependencyVertex<TKey, TValue>[_vertices.Count];
-                _vertices.CopyTo(oldVertices);
-
+                var kvp = _keys.Count > 0  ? _keys.FirstOrDefault(k => k.Value == 0) : (KeyValuePair<TKey, int>?)null;
                 _keys.Clear();
-                _vertices.Clear();
-
-                foreach (var oldVertex in oldVertices) {
-                    if (oldVertex == null) {
-                        continue;
-                    }
-
-                    var incomingKeys = oldVertex.Incoming.Select(i => oldKeysReversed[i]);
-                    var key = oldVertex.Key;
-                    var value = oldVertex.Value;
-                    var isRoot = oldVertex.IsRoot;
-
-                    if (!_keys.TryGetValue(key, out var index)) {
-                        index = _keys.Count;
-                        _keys[key] = index;
-                        _vertices.Add(default);
-                    }
-
-                    Update(key, value, isRoot, incomingKeys, index);
+                if(kvp != null) {
+                    _keys[kvp.Value.Key] = 0;
                 }
 
-                return _version;
+                _version++;
             }
         }
 
         private void Update(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys, in int index) {
             var version = Interlocked.Increment(ref _version);
-
             var incoming = EnsureKeys(index, incomingKeys, version);
-
             _vertices[index] = new DependencyVertex<TKey, TValue>(key, value, isRoot, incoming, version, index);
             _keys[key] = index;
         }
@@ -555,7 +531,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private int _remaining;
             private PriorityProducerConsumer<IDependencyChainNode> _ppc;
 
-            public ImmutableArray<TKey> MissingKeys { get; }
+            public ImmutableArray<TKey> MissingKeys { get; set; }
             public ImmutableArray<TValue> AffectedValues { get; }
             public int Version { get; }
 
