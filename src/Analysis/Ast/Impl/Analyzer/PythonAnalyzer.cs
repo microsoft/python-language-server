@@ -209,18 +209,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
         #endregion
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            var analysisComplete = false;
+        internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
+            var notAllAnalyzed = false;
+            var noSessions = false;
+
             lock (_syncObj) {
-                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
-                analysisComplete = notAnalyzed.Length == 0
-                                  && _nextSession == null
-                                  && (_currentSession == null || _currentSession.IsCompleted);
+                if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
+                    return false; // There are modules that are still being parsed.
+                }
+                notAllAnalyzed = _analysisEntries.Values.ExcludeDefault().Any(e => e.NotAnalyzed);
+                noSessions = _nextSession == null && (_currentSession == null || _currentSession.IsCompleted);
             }
-            if (analysisComplete) {
-                _analysisCompleteEvent.Set();
-                AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+
+            if (noSessions && notAllAnalyzed) {
+                // Attempt to see if within reasonable time new session will start
+                for (var i = 0; i < 50; i++) {
+                    await Task.Delay(10);
+                    lock (_syncObj) {
+                        if(_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
+                            break;
+                        }
+                        if (_currentSession != null || _nextSession != null) {
+                            return false;
+                        }
+                    }
+                }
             }
+
+            _analysisCompleteEvent.Set();
+            AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            
+            return true;
         }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
@@ -229,12 +248,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
-
             lock (_syncObj) {
-                if (_version >= graphVersion) {
+                if (_version >= graphVersion && !entry.NotAnalyzed) {
                     return;
                 }
-
                 _version = graphVersion;
                 _currentSession?.Cancel();
             }

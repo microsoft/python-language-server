@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             EnsureModule(module);
         }
 
-        public void EnsureModule(in IPythonModule module) {
+        private void EnsureModule(in IPythonModule module) {
             if (module == null || _isCanceled()) {
                 return;
             }
