@@ -503,10 +503,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var createLibraryAnalysis = false;
                 if (!_isCanceled) {
                     node?.MarkWalked();
+                    createLibraryAnalysis = canHaveLibraryAnalysis && !document.IsOpen;
                 }
-
-                // Even if session is canceled we want to have analysis.
-                createLibraryAnalysis = canHaveLibraryAnalysis && !document.IsOpen;
 
                 if (node != null) {
                     createLibraryAnalysis &= !node.HasMissingDependencies &&

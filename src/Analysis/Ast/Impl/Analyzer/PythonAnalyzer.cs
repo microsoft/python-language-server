@@ -214,23 +214,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var noSessions = false;
 
             lock (_syncObj) {
+                if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
+                    return false; // There are active or pending sessions.
+                }
                 if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
                     return false; // There are modules that are still being parsed.
                 }
                 notAllAnalyzed = _analysisEntries.Values.ExcludeDefault().Any(e => e.NotAnalyzed);
-                noSessions = _nextSession == null && (_currentSession == null || _currentSession.IsCompleted);
             }
 
-            if (noSessions && notAllAnalyzed) {
-                // Attempt to see if within reasonable time new session will start
-                for (var i = 0; i < 50; i++) {
-                    await Task.Delay(10);
+            if (notAllAnalyzed) {
+                // Attempt to see if within reasonable time new session starts
+                for (var i = 0; i < 20; i++) {
+                    await Task.Delay(20);
                     lock (_syncObj) {
                         if(_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
-                            break;
+                            break; // Now all modules are analyzed.
                         }
                         if (_currentSession != null || _nextSession != null) {
-                            return false;
+                            return false; // New sessions were created
                         }
                     }
                 }
