@@ -211,8 +211,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
             var notAllAnalyzed = false;
-            var noSessions = false;
-
             lock (_syncObj) {
                 if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
                     return false; // There are active or pending sessions.
@@ -220,11 +218,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
                     return false; // There are modules that are still being parsed.
                 }
-                notAllAnalyzed = _analysisEntries.Values.ExcludeDefault().Any(e => e.NotAnalyzed);
+
+                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
+                notAllAnalyzed = notAnalyzed.Length > 0;
             }
 
             if (notAllAnalyzed) {
                 // Attempt to see if within reasonable time new session starts
+                // This is a workaround since there may still be concurrency issues
+                // When module analysis session gets canceled and module never re-queued.
+                // We don't want to prevent event from firing when this [rarely] happens.
                 for (var i = 0; i < 20; i++) {
                     await Task.Delay(20);
                     lock (_syncObj) {
@@ -251,7 +254,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
             lock (_syncObj) {
-                if (_version >= graphVersion && !entry.NotAnalyzed) {
+                if (_version >= graphVersion) {
                     return;
                 }
                 _version = graphVersion;
