@@ -1551,6 +1551,24 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void MatMulMultilineOperator() {
+            foreach (var version in V35AndUp) {
+                CheckAst(
+                    ParseFile("MatMulOperator2.py", ErrorSink.Null, version),
+                    CheckSuite(
+                        CheckBinaryStmt(One, PythonOperator.MatMultiply, Two)
+                    )
+                );
+            }
+
+            foreach (var version in V3Versions.Except(V35AndUp)) {
+                ParseErrors("MatMulOperator.py", version, new[] {
+                    new ErrorResult("unexpected token '@'", new SourceSpan(1, 3, 1, 4))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void GroupingRecovery() {
             foreach (var version in AllVersions) {
                 CheckAst(
