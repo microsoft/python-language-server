@@ -14,8 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
@@ -88,7 +86,5 @@ namespace Microsoft.Python.Analysis.Modules {
         ImmutableArray<PythonLibraryPath> LibraryPaths { get; }
 
         bool SetUserConfiguredPaths(ImmutableArray<string> paths);
-
-        IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken);
     }
 }

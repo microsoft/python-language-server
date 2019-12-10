@@ -26,34 +26,27 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class VariableModel : MemberModel {
         public string Value { get; set; }
 
-        public static VariableModel FromVariable(IVariable v) => new VariableModel {
+        public static VariableModel FromVariable(IVariable v, IServiceContainer services) => new VariableModel {
             Id = v.Name.GetStableHash(),
             Name = v.Name,
             QualifiedName = v.Name,
             IndexSpan = v.Location.IndexSpan.ToModel(),
-            Value = v.Value.GetPersistentQualifiedName()
+            Value = v.Value.GetPersistentQualifiedName(services)
         };
 
-        public static VariableModel FromInstance(string name, IPythonInstance inst) => new VariableModel {
+        public static VariableModel FromInstance(string name, IPythonInstance inst, IServiceContainer services) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
             QualifiedName = name,
-            Value = inst.GetPersistentQualifiedName()
+            Value = inst.GetPersistentQualifiedName(services)
         };
 
-        public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
+        public static VariableModel FromType(string name, IPythonType t, IServiceContainer services) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
             QualifiedName = name,
             IndexSpan = t.Location.IndexSpan.ToModel(),
-            Value = t.GetPersistentQualifiedName()
+            Value = t.GetPersistentQualifiedName(services)
         };
-
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            var m = mf.ConstructMember(Value) ?? mf.Module.Interpreter.UnknownType;
-            return new Variable(Name, m, VariableSource.Declaration, new Location(mf.Module, IndexSpan?.ToSpan() ?? default));
-        }
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
     }
 }

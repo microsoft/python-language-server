@@ -21,7 +21,7 @@ using Microsoft.Python.Core.Disposables;
 namespace Microsoft.Python.Core {
     public class AsyncCountdownEvent {
         private readonly AsyncManualResetEvent _mre = new AsyncManualResetEvent();
-        private int _count;
+        private long _count;
 
         public AsyncCountdownEvent(int initialCount) {
             if (initialCount < 0) {
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Core {
             }
         }
 
-        public Task WaitAsync() => _mre.WaitAsync();
+        public long Count => Interlocked.Read(ref _count);
 
         public Task WaitAsync(CancellationToken cancellationToken) => _mre.WaitAsync(cancellationToken);
 

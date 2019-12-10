@@ -31,6 +31,8 @@ namespace Microsoft.Python.Analysis.Caching {
         public string ModuleName;
         /// <summary>Indicates if module is a stub.</summary>
         public bool IsStub;
+        /// <summary>Module unique id.</summary>
+        public string ModuleId;
         /// <summary>Module member names such as 'A', 'B', 'C' from module:A.B.C.</summary>
         public IReadOnlyList<string> MemberNames;
     }

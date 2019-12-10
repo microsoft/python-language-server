@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
         public override IPythonIterator GetIterator() =>
-            Call(@"iterkeys", ArgumentSet.WithoutContext) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
+            Call(@"iterkeys", ArgumentSet.WithoutContext) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule);
 
         public override IMember Index(IArgumentSet args) {
             if (args.Arguments.Count == 1) {

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
@@ -33,16 +32,20 @@ namespace Microsoft.Python.Analysis.Caching {
             _fileSize = model.FileSize;
         }
 
+        /// <summary>
+        /// Constructs module global scope. This is separate from regular constructor
+        /// in order to better handle reentrancy due to circular references
+        /// in the module factory.
+        /// </summary>
         public void Construct(ModuleModel model) {
-            var gs = new RestoredGlobalScope(model, this);
-            GlobalScope = gs;
-            gs.ReconstructVariables();
+            var rs = new RestoredGlobalScope(model, this, Services);
+            GlobalScope = rs;
+            rs.Construct(model, Services);
         }
 
         protected override string LoadContent() => string.Empty;
 
         public override string Documentation { get; }
-        public override IEnumerable<string> GetMemberNames() => GlobalScope.Variables.Names;
 
         #region ILocationConverter
         public override SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(_newLines, index);

@@ -135,7 +135,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             AddOverload(fd, f, o => f.AddOverload(o));
         }
 
-        private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             if (!_table.ReplacedByStubs.Contains(fd)) {

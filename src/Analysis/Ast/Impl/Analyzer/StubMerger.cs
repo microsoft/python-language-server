@@ -75,6 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.IsUnknown()) {
                     continue;
                 }
+
                 // If stub says 'Any' but we have better type, keep the current type.
                 if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
@@ -84,7 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var sourceType = sourceVar?.Value.GetPythonType();
 
                 if (sourceVar?.Source == VariableSource.Import &&
-                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
+                    sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
                     // Keep imported types as they are defined in the library. For example,
                     // 'requests' imports NullHandler as 'from logging import NullHandler'.
                     // But 'requests' also declares NullHandler in its stub (but not in the main code)
@@ -92,6 +93,36 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // taking types that are stub-only when similar type is imported from another
                     // module that also has a stub.
                     continue;
+                }
+
+                var stubPrimaryModule = stubType.DeclaringModule.PrimaryModule;
+
+                // If type comes from another module and stub type comes from that module stub, skip it.
+                // For example, 'sqlite3.dbapi2' has Date variable with value from 'datetime' module.
+                // Stub of 'sqlite3.dbapi2' also has Date from 'datetime (stub)'. We want to use
+                // type from the primary 'datetime' since it already merged its stub and updated
+                // type location and documentation while 'datetime' stub does not have documentation
+                // and its location is irrelevant since we don't navigate to stub source.
+                if (!_eval.Module.Equals(sourceType?.DeclaringModule) &&
+                    sourceType?.DeclaringModule.Stub != null &&
+                    sourceType.DeclaringModule.Equals(stubPrimaryModule)) {
+                    continue;
+                }
+
+                // If stub type is not from this module stub, redirect type to primary since primary has locations and documentation.
+                if (sourceType == null && stubPrimaryModule != null && !stubPrimaryModule.Equals(_eval.Module)) {
+                    Debug.Assert(stubType.DeclaringModule.ModuleType == ModuleType.Stub);
+                    switch (stubType) {
+                        case PythonVariableModule vm:
+                            stubType = vm.Module.PrimaryModule ?? stubType;
+                            break;
+                        case IPythonModule mod:
+                            stubType = mod.PrimaryModule ?? stubType;
+                            break;
+                        default:
+                            stubType = stubPrimaryModule.GetMember(v.Name)?.GetPythonType() ?? stubType;
+                            break;
+                    }
                 }
 
                 TryReplaceMember(v, sourceType, stubType, cancellationToken);
@@ -110,8 +141,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                     break;
 
-                case PythonClassType sourceClass:
-                    MergeClass(v, sourceClass, stubType, cancellationToken);
+                case IPythonClassType sourceClass:
+                    MergeMembers(v, sourceClass, stubType, cancellationToken);
+                    break;
+
+                case PythonFunctionType sourceFunction:
+                    MergeMembers(v, sourceFunction, stubType, cancellationToken);
                     break;
 
                 case IPythonModule _:
@@ -137,11 +172,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void MergeClass(IVariable v, IPythonClassType sourceClass, IPythonType stubType, CancellationToken cancellationToken) {
+        private void MergeMembers(IVariable v, IPythonType sourceType, IPythonType stubType, CancellationToken cancellationToken) {
             // Transfer documentation first so we get class documentation
             // that comes from the class definition win over one that may
             // come from __init__ during the member merge below.
-            TransferDocumentationAndLocation(sourceClass, stubType);
+            TransferDocumentationAndLocation(sourceType.GetPythonType(), stubType);
 
             // Replace the class entirely since stub members may use generic types
             // and the class definition is important. We transfer missing members
@@ -150,15 +185,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // First pass: go through source class members and pick those 
             // that are not present in the stub class.
-            foreach (var name in sourceClass.GetMemberNames().ToArray()) {
+            foreach (var name in sourceType.GetMemberNames().ToArray()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var sourceMember = sourceClass.GetMember(name);
+                var sourceMember = sourceType.GetMember(name);
                 if (sourceMember.IsUnknown()) {
                     continue; // Do not add unknowns to the stub.
                 }
                 var sourceMemberType = sourceMember?.GetPythonType();
-                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceClass) {
+                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceType) {
                     continue; // Only take members from this class and not from bases.
                 }
                 if (!IsFromThisModuleOrSubmodules(sourceMemberType)) {
@@ -196,7 +231,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; // Only take members from this class and not from bases.
                 }
 
-                var sourceMember = sourceClass.GetMember(name);
+                var sourceMember = sourceType.GetMember(name);
                 if (sourceMember.IsUnknown()) {
                     continue;
                 }
@@ -249,7 +284,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Consider that 'email.headregistry' stub has DataHeader declaring 'datetime'
             // property of type 'datetime' from 'datetime' module. We don't want to modify
             // datetime type and change it's location to 'email.headregistry'.
-            if(stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
+            if (stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
                 return;
             }
 
@@ -299,7 +334,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// or location of unrelated types such as coming from the base object type.
         /// </remarks>
         private bool IsFromThisModuleOrSubmodules(IPythonType type) {
-            if(type.IsUnknown()) {
+            if (type.IsUnknown()) {
                 return false;
             }
             var thisModule = _eval.Module;
