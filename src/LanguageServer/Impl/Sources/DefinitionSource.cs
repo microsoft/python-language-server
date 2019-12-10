@@ -123,6 +123,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 case ImplicitPackageImport packageImport:
                     module = mres.GetImportedModule(packageImport.FullName);
                     break;
+                case ImportNotFound _:
+                    return null;
             }
 
             // Are we in the module name (i.e. A in 'from A import B')?
@@ -262,7 +264,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope, LookupOptions.All);
-            if (m == null || scope.Module.ModuleType == ModuleType.Builtins || !(scope.Variables[name] is IVariable v)) {
+            var v = scope?.Variables[name];
+            if (m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins || v.IsUnknown()) {
                 return null;
             }
 
