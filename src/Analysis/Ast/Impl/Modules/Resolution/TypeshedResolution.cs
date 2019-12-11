@@ -81,6 +81,15 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return false;
         }
 
+        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken = default) {
+            foreach (var moduleRef in Modules.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (moduleRef.Value != null) {
+                    yield return moduleRef.Value;
+                }
+            }
+        }
+
         public Task ReloadAsync(CancellationToken cancellationToken = default) {
             Modules.Clear();
             PathResolver = new PathResolver(Interpreter.LanguageVersion, Root, _typeStubPaths, ImmutableArray<string>.Empty);

@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IBuiltinsPythonModule BuiltinsModule => _builtins;
 
-        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken) {
+        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken = default) {
             foreach (var module in _specialized.Values) {
                 cancellationToken.ThrowIfCancellationRequested();
                 yield return module;
@@ -77,8 +77,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
+            IPythonModule module;
             if (moduleImport.ModulePath != null) {
-                var module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
+                module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
                 if (module != null) {
                     GetRdt().LockDocument(module.Uri);
                     return module;
@@ -91,33 +92,39 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 : ModuleType.User;
 
             var dbs = GetDbService();
-            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath, moduleType);
-
-            IPythonModule stub = null;
-            if (!moduleImport.IsPersistent) {
-                // If there is a stub, make sure it is loaded and attached
-                // First check stub next to the module.
-                if (TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
-                    Analyzer.InvalidateAnalysis(stub);
-                } else {
-                    // If nothing found, try Typeshed.
-                    stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+            if (dbs != null) {
+                var sw = Stopwatch.StartNew();
+                module = dbs.RestoreModule(name, moduleImport.ModulePath, moduleType);
+                sw.Stop();
+                if (module != null) {
+                    Log?.Log(TraceEventType.Verbose, $"Restored from database: {name} in {sw.ElapsedMilliseconds} ms.");
+                    Interpreter.ModuleResolution.SpecializeModule(name, x => module, true);
+                    return module;
                 }
+            }
 
-                // If stub is created and its path equals to module, return that stub as module
-                if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
-                    return stub;
-                }
+            // If there is a stub, make sure it is loaded and attached
+            // First check stub next to the module.
+            if (TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
+                Analyzer.InvalidateAnalysis(stub);
+            } else {
+                // If nothing found, try Typeshed.
+                stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+            }
+
+            // If stub is created and its path equals to module, return that stub as module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
             }
 
             if (moduleImport.IsBuiltin) {
                 Log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
-                return new CompiledBuiltinPythonModule(name, stub, moduleImport.IsPersistent, Services);
+                return new CompiledBuiltinPythonModule(name, stub, Services);
             }
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, moduleType, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, false, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -127,8 +134,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleType,
                 FilePath = moduleImport.ModulePath,
-                Stub = stub,
-                IsPersistent = moduleImport.IsPersistent
+                Stub = stub
             };
 
             return GetRdt().AddModule(mco);

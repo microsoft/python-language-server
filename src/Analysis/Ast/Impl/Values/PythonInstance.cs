@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Values {
                 return new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter);
             }
 
-            return new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
+            return new EmptyIterator(Type.DeclaringModule);
         }
 
         public bool Equals(IPythonInstance other) => Type?.Equals(other?.Type) == true;

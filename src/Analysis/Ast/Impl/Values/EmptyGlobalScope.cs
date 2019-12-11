@@ -28,11 +28,11 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IPythonModule Module { get; }
         public string Name => string.Empty;
-        public PythonAst Ast => Module.Analysis.Ast;
         public ScopeStatement Node => Module.Analysis.Ast;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; }
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
+        public IScope GetChildScope(ScopeStatement node) => null;
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
         public IVariableCollection Variables => VariableCollection.Empty;

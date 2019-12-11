@@ -26,11 +26,6 @@ namespace Microsoft.Python.Analysis.Types {
         FunctionDefinition FunctionDefinition { get; }
 
         /// <summary>
-        /// A user readable description of the property.
-        /// </summary>
-        string Description { get; }
-
-        /// <summary>
         /// True if the property is read-only.
         /// </summary>
         bool IsReadOnly { get; }

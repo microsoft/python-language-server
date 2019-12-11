@@ -276,10 +276,6 @@ namespace Microsoft.Python.Core.IO {
         /// <param name="recurse">
         /// <c>true</c> to return files within subdirectories.
         /// </param>
-        /// <param name="fullPaths">
-        /// <c>true</c> to return full paths for all subdirectories. Otherwise,
-        /// the relative path from <paramref name="root"/> is returned.
-        /// </param>
         public static IEnumerable<IFileInfo> EnumerateFiles(IFileSystem fileSystem, string root, string pattern = "*", bool recurse = true) {
             root = EnsureEndSeparator(root);
 
@@ -290,15 +286,16 @@ namespace Microsoft.Python.Core.IO {
 
             foreach (var dir in dirs) {
                 var fullDir = Path.IsPathRooted(dir) ? dir : root + dir;
+                if (string.IsNullOrEmpty(fullDir)) {
+                    continue;
+                }
                 IFileInfo[] files = null;
                 try {
-                    if (fileSystem.DirectoryExists(fullDir)) {
-                        files = fileSystem.GetDirectoryInfo(fullDir)
-                            .EnumerateFileSystemInfos(pattern, SearchOption.TopDirectoryOnly)
-                            .Where(f => !f.Attributes.HasFlag(FileAttributes.Directory))
-                            .OfType<IFileInfo>()
-                            .ToArray();
-                    }
+                    files = fileSystem.GetDirectoryInfo(fullDir)
+                        .EnumerateFileSystemInfos(pattern, SearchOption.TopDirectoryOnly)
+                        .Where(f => !f.Attributes.HasFlag(FileAttributes.Directory))
+                        .OfType<IFileInfo>()
+                        .ToArray();
                 } catch (UnauthorizedAccessException) {
                 } catch (IOException) {
                 }
