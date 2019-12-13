@@ -176,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private static readonly Regex TildaHeaderRegex = new Regex(@"^\s*~~~+$", RegexOptions.Singleline | RegexOptions.Compiled);
         private static readonly Regex PlusHeaderRegex = new Regex(@"^\s*\+\+\++$", RegexOptions.Singleline | RegexOptions.Compiled);
         private static readonly Regex LeadingAsteriskRegex = new Regex(@"^(\s+\* )(.*)$", RegexOptions.Singleline | RegexOptions.Compiled);
-        private static readonly Regex UnescapedMarkdownCharsRegex = new Regex(@"(?<!\\)([_*~])", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex UnescapedMarkdownCharsRegex = new Regex(@"(?<!\\)([_*~\[\]])", RegexOptions.Singleline | RegexOptions.Compiled);
 
         private void AppendTextLine(string line) {
             line = PreprocessTextLine(line);
