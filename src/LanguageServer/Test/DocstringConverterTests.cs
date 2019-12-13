@@ -501,6 +501,13 @@ This is a list:
             docstring.Should().ConvertToMarkdown(markdown);
         }
 
+        [TestMethod, Priority(0)]
+        public void SquareBrackets() {
+            var docstring = @"Optional[List[str]]";
+            var markdown = @"Optional\[List\[str\]\]";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
         [DataRow(null)]
         [DataRow("")]
         [DataRow("  ")]

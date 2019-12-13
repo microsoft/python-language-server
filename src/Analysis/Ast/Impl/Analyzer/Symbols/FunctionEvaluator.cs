@@ -38,10 +38,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
             _overload = overload;
-            _function = overload.ClassMember ?? throw new NullReferenceException(nameof(overload.ClassMember));
+            _function = overload.ClassMember ?? throw new ArgumentNullException(nameof(overload.ClassMember));
             _self = _function.DeclaringType as PythonClassType;
-
-            FunctionDefinition = overload.FunctionDefinition;
+            FunctionDefinition = overload.FunctionDefinition ?? throw new ArgumentNullException(nameof(overload.FunctionDefinition));
         }
 
         private FunctionDefinition FunctionDefinition { get; }
