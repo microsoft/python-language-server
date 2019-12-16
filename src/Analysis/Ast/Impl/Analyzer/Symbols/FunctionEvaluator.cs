@@ -46,6 +46,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
+            if(Eval.StubOnlyAnalysis) {
+                return;
+            }
+
             var stub = _function.DeclaringModule.ModuleType == ModuleType.Stub;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {

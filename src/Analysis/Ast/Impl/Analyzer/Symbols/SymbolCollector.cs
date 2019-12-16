@@ -61,9 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
-                if (!_eval.StubOnlyAnalysis) {
-                    _table.Add(new ClassEvaluator(_eval, cd));
-                }
+                _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
