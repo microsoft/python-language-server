@@ -136,6 +136,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
+            // Check if function exists in stubs. If so, take overload from stub
+            // and the documentation from this actual module.
+            if (!_table.ReplacedByStubs.Contains(fd)) {
+                var stubOverload = GetOverloadFromStub(fd);
+                if (stubOverload != null) {
+                    var documentation = fd.GetDocumentation();
+                    if (!string.IsNullOrEmpty(documentation)) {
+                        stubOverload.SetDocumentation(documentation);
+                    }
+                    addOverload(stubOverload);
+                    _table.ReplacedByStubs.Add(fd);
+                    return;
+                }
+            }
+
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.

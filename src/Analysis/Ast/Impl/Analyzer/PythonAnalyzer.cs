@@ -209,18 +209,42 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
         #endregion
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
-            var analysisComplete = false;
+        internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
+            var notAllAnalyzed = false;
             lock (_syncObj) {
+                if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
+                    return false; // There are active or pending sessions.
+                }
+                if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
+                    return false; // There are modules that are still being parsed.
+                }
+
                 var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
-                analysisComplete = notAnalyzed.Length == 0
-                                  && _nextSession == null
-                                  && (_currentSession == null || _currentSession.IsCompleted);
+                notAllAnalyzed = notAnalyzed.Length > 0;
             }
-            if (analysisComplete) {
-                _analysisCompleteEvent.Set();
-                AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+
+            if (notAllAnalyzed) {
+                // Attempt to see if within reasonable time new session starts
+                // This is a workaround since there may still be concurrency issues
+                // When module analysis session gets canceled and module never re-queued.
+                // We don't want to prevent event from firing when this [rarely] happens.
+                for (var i = 0; i < 20; i++) {
+                    await Task.Delay(20);
+                    lock (_syncObj) {
+                        if(_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
+                            break; // Now all modules are analyzed.
+                        }
+                        if (_currentSession != null || _nextSession != null) {
+                            return false; // New sessions were created
+                        }
+                    }
+                }
             }
+
+            _analysisCompleteEvent.Set();
+            AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+            
+            return true;
         }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
@@ -229,12 +253,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
-
             lock (_syncObj) {
                 if (_version >= graphVersion) {
                     return;
                 }
-
                 _version = graphVersion;
                 _currentSession?.Cancel();
             }

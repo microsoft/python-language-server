@@ -45,16 +45,6 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
     internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer, ILocationConverter {
-        private enum State {
-            None,
-            Loading,
-            Loaded,
-            Parsing,
-            Parsed,
-            Analyzing,
-            Analyzed
-        }
-
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
         private readonly object _syncObj = new object();
@@ -71,7 +61,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        private State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) : base(null) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -116,7 +105,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
-                ContentState = State.Analyzed;
+                ModuleState = ModuleState.Analyzed;
             }
 
             IsTypeshed = creationOptions.IsTypeshed;
@@ -174,6 +163,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual Uri Uri { get; }
         public IDocumentAnalysis Analysis { get; private set; }
         public IPythonInterpreter Interpreter { get; }
+        public ModuleState ModuleState { get; private set; } = ModuleState.None;
 
         /// <summary>
         /// Associated stub module. Note that in case of specialized modules
@@ -292,7 +282,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Invalidate() {
             lock (_syncObj) {
-                ContentState = State.None;
+                ModuleState = ModuleState.None;
                 _buffer.MarkChanged();
                 Parse();
             }
@@ -306,7 +296,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _linkedParseCts?.Dispose();
             _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
-            ContentState = State.Parsing;
+            ModuleState = ModuleState.Parsing;
             _parsingTask = Task.Run(() => ParseAndLogExceptions(_linkedParseCts.Token), _linkedParseCts.Token);
         }
 
@@ -320,8 +310,8 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         protected virtual void Analyze(PythonAst ast, int version) {
-            if (ContentState < State.Analyzing) {
-                ContentState = State.Analyzing;
+            if (ModuleState < ModuleState.Analyzing) {
+                ModuleState = ModuleState.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
                 analyzer.EnqueueDocumentForAnalysis(this, ast, version);
@@ -367,7 +357,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     _diagnosticsService?.Replace(Uri, _parseErrors, DiagnosticSource.Parser);
                 }
 
-                ContentState = State.Parsed;
+                ModuleState = ModuleState.Parsed;
                 Analysis = new EmptyAnalysis(Services, this);
             }
 
@@ -438,7 +428,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 // to perform additional actions on the completed analysis such
                 // as declare additional variables, etc.
                 OnAnalysisComplete();
-                ContentState = State.Analyzed;
+                ModuleState = ModuleState.Analyzed;
 
                 if (ModuleType != ModuleType.User) {
                     _buffer.Clear();
@@ -494,8 +484,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region Content management
         protected virtual string LoadContent() {
-            if (ContentState < State.Loading) {
-                ContentState = State.Loading;
+            if (ModuleState < ModuleState.Loading) {
+                ModuleState = ModuleState.Loading;
                 try {
                     // If this is stub, don't load content, the main module will instead use the content.
                     string code;
@@ -508,7 +498,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     //    ContentState = State.Loaded;
                     //}
                     code = FileSystem.ReadTextWithRetry(FilePath);
-                    ContentState = State.Loaded;
+                    ModuleState = State.Loaded;
                     return code;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -518,18 +508,18 @@ namespace Microsoft.Python.Analysis.Modules {
         private void InitializeContent(string content, int version) {
             lock (_syncObj) {
                 SetOrLoadContent(content);
-                if (ContentState < State.Parsing && _parsingTask == null) {
+                if (ModuleState < ModuleState.Parsing && _parsingTask == null) {
                     Parse();
                 }
             }
         }
 
         private void SetOrLoadContent(string content) {
-            if (ContentState < State.Loading) {
+            if (ModuleState < ModuleState.Loading) {
                 try {
                     content = content ?? LoadContent();
                     _buffer.SetContent(content);
-                    ContentState = State.Loaded;
+                    ModuleState = ModuleState.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }

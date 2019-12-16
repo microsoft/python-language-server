@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public bool IsTypeshed => Module?.IsTypeshed == true;
+        public ModuleState ModuleState => Module?.ModuleState ?? ModuleState.None;
         public IEnumerable<string> ChildrenNames => _children.Keys;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 

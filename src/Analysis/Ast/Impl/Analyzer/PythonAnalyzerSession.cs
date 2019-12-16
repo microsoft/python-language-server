@@ -164,8 +164,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (isFinal) {
                     var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
                     totalMilliseconds = Math.Round(totalMilliseconds, 2);
-                    _analyzer.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
-                    _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
+                    if (await _analyzer.RaiseAnalysisCompleteAsync(modulesCount, totalMilliseconds)) {
+                        _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
+                    }
                 }
             }
 
@@ -515,7 +516,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
                 }
 
-                if (document.ModuleType != ModuleType.Stub) {
+                if (document.ModuleType != ModuleType.Stub && !_isCanceled) {
                     ast.ReduceToImports();
                     document.SetAst(ast);
                 }
