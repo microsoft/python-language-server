@@ -96,7 +96,8 @@ namespace Microsoft.Python.Analysis.Tests {
             var ap = Substitute.For<IAnalysisOptionsProvider>();
             ap.Options.Returns(x => new AnalysisOptions {
                 AnalysisCachingLevel = AnalysisCachingLevel.None,
-                StubOnlyAnalysis = true
+                StubOnlyAnalysis = true,
+                LintingEnabled = true
             });
             sm.AddService(ap);
 
