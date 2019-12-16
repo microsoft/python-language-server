@@ -487,18 +487,8 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ModuleState < ModuleState.Loading) {
                 ModuleState = ModuleState.Loading;
                 try {
-                    // If this is stub, don't load content, the main module will instead use the content.
-                    string code;
-                    //if (ModuleType == ModuleType.Stub) {
-                    //    code = string.Empty;
-                    //    ContentState = State.Analyzed;
-                    //} else {
-                    //    var contentPath = Stub != null ? Stub.FilePath : FilePath;
-                    //    code = FileSystem.ReadTextWithRetry(contentPath);
-                    //    ContentState = State.Loaded;
-                    //}
-                    code = FileSystem.ReadTextWithRetry(FilePath);
-                    ModuleState = State.Loaded;
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
+                    ModuleState = ModuleState.Loaded;
                     return code;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
