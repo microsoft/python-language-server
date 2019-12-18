@@ -351,6 +351,11 @@ namespace Microsoft.Python.Core.IO {
         /// </summary>
         public static bool IsZipFile(string rawZipPath, out string zipPath) {
             var path = NormalizePathAndTrim(rawZipPath);
+            if (!File.Exists(path)) {
+                zipPath = string.Empty;
+                return false;
+            }
+            
             var extension = Path.GetExtension(path);
             switch (extension) {
                 case ".zip":

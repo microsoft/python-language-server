@@ -201,7 +201,6 @@ module2.";
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
             var analysis = await doc.GetAnalysisAsync(-1);
 
-
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(1, 21));
             comps.Should().HaveLabels("module1", "module2");
@@ -590,7 +589,7 @@ z.M3().
 
             comps = cs.GetCompletions(analysis, new SourceLocation(6, 3));
             comps.Should().HaveLabels("M3");
-            
+
             comps = cs.GetCompletions(analysis, new SourceLocation(8, 8));
             comps.Should().HaveLabels("M3");
 
@@ -656,7 +655,7 @@ module1.";
             comps.Should().OnlyHaveLabels("module");
 
             doc.Update(new[] {
-                    new DocumentChange {
+                new DocumentChange {
                     InsertedText = appCode2,
                     ReplacedSpan = new SourceSpan(1, 1, 2, 13)
                 }
@@ -1048,5 +1047,34 @@ module2.";
             );
         }
 
+        [DataRow("pygame.egg")]
+        [DataRow("pygame.zip")]
+        [DataTestMethod, Priority(0)]
+        public async Task PygameEggZip(string eggZipFilePath) {
+            var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, eggZipFilePath) });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            const string code = "import pygame";
+            var uriPath = Path.Combine(root, "test_pygame.py");
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("pygame").Which.Should().HaveMembers(
+                "transform",
+                "font",
+                "sysfont",
+                "mixer",
+                "movie",
+                "scrap",
+                "surfarray",
+                "sndarray",
+                "fastevent",
+                "imageext"
+            );
+        }
     }
 }
