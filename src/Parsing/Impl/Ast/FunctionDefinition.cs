@@ -87,17 +87,13 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonVariable Variable { get; set; }
 
         #region IScopeStatement
-
         public override Statement Body => _body;
         internal void SetBody(Statement body) => _body = body;
-
         #endregion
 
         #region ScopeStatement
-
         public override string Name => NameExpression.Name ?? string.Empty;
         internal override ScopeInfo ScopeInfo { get; }
-
         #endregion
 
         public int GetIndexOfDef(PythonAst ast) {
@@ -209,9 +205,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
                     format.Append(
                         res,
-                        Parameters.Length != 0
-                            ? format.SpaceWithinFunctionDeclarationParens
-                            : format.SpaceWithinEmptyParameterList,
+                        Parameters.Length != 0 ?
+                            format.SpaceWithinFunctionDeclarationParens :
+                            format.SpaceWithinEmptyParameterList,
                         " ",
                         "",
                         this.GetFourthWhiteSpaceDefaultNull(ast)

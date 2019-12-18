@@ -120,8 +120,8 @@ class oar(list):
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 
             result.Should().HaveItem("append")
-                  .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
-                  .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [TestMethod]
@@ -139,8 +139,8 @@ class Test(A):
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
             result.Should().HaveItem("__init__")
-                  .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
-                  .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+                .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [DataRow(PythonLanguageVersion.V26, "value")]
@@ -157,8 +157,8 @@ class oar(list):
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 
             result.Should().HaveItem("append")
-                  .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super(oar, self).append({parameterName})")
-                  .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super(oar, self).append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [TestMethod]
@@ -176,8 +176,8 @@ class Test(A):
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
             result.Should().HaveItem("__init__")
-                  .Which.Should().HaveInsertText($"__init__(self):{Environment.NewLine}    super(Test, self).__init__()")
-                  .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+                .Which.Should().HaveInsertText($"__init__(self):{Environment.NewLine}    super(Test, self).__init__()")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [TestMethod, Priority(0)]
@@ -257,8 +257,8 @@ class B(A):
 
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
             result.Should()
-                  .HaveInsertTexts($"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b=b, *args, **kwargs)")
-                  .And.NotContainInsertTexts($"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b = b, *args, **kwargs)");
+                .HaveInsertTexts($"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b=b, *args, **kwargs)")
+                .And.NotContainInsertTexts($"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b = b, *args, **kwargs)");
         }
 
         [DataRow(false)]
@@ -288,8 +288,8 @@ class B(A):
                 analysis = await GetAnalysisAsync("raise Exception fr ", PythonVersions.LatestAvailable3X);
                 result = cs.GetCompletions(analysis, new SourceLocation(1, 19));
                 result.Should().HaveInsertTexts("from")
-                      .And.NotContainInsertTexts("Exception", "def", "abs")
-                      .And.Subject.ApplicableSpan.Should().Be(1, 17, 1, 19);
+                    .And.NotContainInsertTexts("Exception", "def", "abs")
+                    .And.Subject.ApplicableSpan.Should().Be(1, 17, 1, 19);
             }
 
             analysis = await GetAnalysisAsync("raise Exception, x, y", version);
@@ -330,8 +330,8 @@ class B(A):
             analysis = await GetAnalysisAsync("try:\n    pass\nexcept Exception a");
             result = cs.GetCompletions(analysis, new SourceLocation(3, 19));
             result.Should().HaveInsertTexts("as")
-                  .And.NotContainInsertTexts("Exception", "def", "abs")
-                  .And.Subject.ApplicableSpan.Should().Be(3, 18, 3, 19);
+                .And.NotContainInsertTexts("Exception", "def", "abs")
+                .And.Subject.ApplicableSpan.Should().Be(3, 18, 3, 19);
         }
 
         [TestMethod, Priority(0)]
@@ -417,7 +417,7 @@ sys  .  version
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 5));
             result.Completions?.Select(i => i.documentation?.kind).ExcludeDefault()
-                  .Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
+                .Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
         }
 
         [TestMethod, Priority(0)]
@@ -565,10 +565,10 @@ class C(object):
             var completionForAbc = cs.GetCompletions(analysis, new SourceLocation(5, 13));
 
             completionInD.Should().HaveLabels("C", "D")
-                         .And.NotContainLabels("a", "abc", "self", "x", "fob", "baz");
+                .And.NotContainLabels("a", "abc", "self", "x", "fob", "baz");
 
             completionInOar.Should().HaveLabels("C", "D", "a", "abc", "self", "x")
-                           .And.NotContainLabels("fob", "baz");
+                .And.NotContainLabels("fob", "baz");
 
             completionForAbc.Should().HaveLabels("baz", "fob");
         }
@@ -834,8 +834,8 @@ from unittest.case import TestCase as TC, TestCase
 
             result = cs.GetCompletions(analysis, new SourceLocation(3, 22));
             result.Should().HaveLabels("import")
-                  .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                  .And.Subject.ApplicableSpan.Should().Be(3, 20, 3, 26);
+                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
+                .And.Subject.ApplicableSpan.Should().Be(3, 20, 3, 26);
 
             result = cs.GetCompletions(analysis, new SourceLocation(3, 27));
             result.Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
@@ -857,8 +857,8 @@ pass
 
             result = cs.GetCompletions(analysis, new SourceLocation(2, 22));
             result.Should().HaveLabels("import")
-                  .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                  .And.Subject.ApplicableSpan.Should().Be(2, 20, 2, 23);
+                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
+                .And.Subject.ApplicableSpan.Should().Be(2, 20, 2, 23);
 
             code = @"
 import unittest.case a
@@ -866,8 +866,8 @@ pass";
             analysis = await GetAnalysisAsync(code);
             result = cs.GetCompletions(analysis, new SourceLocation(2, 23));
             result.Should().HaveLabels("as")
-                  .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                  .And.Subject.ApplicableSpan.Should().Be(2, 22, 2, 23);
+                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
+                .And.Subject.ApplicableSpan.Should().Be(2, 22, 2, 23);
 
             code = @"
 from unittest.case import TestCase a
@@ -875,8 +875,8 @@ pass";
             analysis = await GetAnalysisAsync(code);
             result = cs.GetCompletions(analysis, new SourceLocation(2, 37));
             result.Should().HaveLabels("as")
-                  .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                  .And.Subject.ApplicableSpan.Should().Be(2, 36, 2, 37);
+                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
+                .And.Subject.ApplicableSpan.Should().Be(2, 36, 2, 37);
         }
 
         [TestMethod, Priority(0)]
@@ -1449,8 +1449,6 @@ class B(A):
             result.Completions.Where(item => item.insertText == "None").Should().HaveCount(1);
         }
 
-
-
         [TestMethod]
         public async Task SingleInheritanceSuperCheckCompletion() {
             const string code = @"
@@ -1470,7 +1468,6 @@ class B(A):
 
             result.Completions.Where(item => item.insertText == "base_func").Should().HaveCount(1);
         }
-
 
         [TestMethod]
         public async Task SingleInheritanceSuperCheckCompletionNoDuplicates() {
@@ -1493,7 +1490,6 @@ class C(B):
 
             result.Completions.GroupBy(item => item.insertText).Any(g => g.Count() > 1).Should().BeFalse();
         }
-
 
         [TestMethod, Priority(0)]
         public async Task ImportDotMembers() {

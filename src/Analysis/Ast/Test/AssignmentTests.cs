@@ -713,7 +713,7 @@ test();
             analysis.GlobalScope.Should().HaveChildScopeAt<IScope>(1).Which.Should()
                 .HaveVariable("y").OfType(BuiltinTypeId.Int).And.HaveVariable("h").OfType(BuiltinTypeId.List);
         }
-        
+
         [TestMethod, Priority(0)]
         public async Task NamedExpressionInNestedComprehensionBindFunctionScope() {
             const string code = @"

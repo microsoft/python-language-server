@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // All arguments to Generic must be distinct	
             if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericNotAllUnique, 
+                    Resources.GenericNotAllUnique,
                     GetLocation(expr).Span,
                     ErrorCodes.TypingGenericArguments,
                     Severity.Warning,
@@ -174,8 +174,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
 
             var argSet = initOverload != null
-                ? new ArgumentSet(initFunc, 0, cls, callExpr, this)
-                : new ArgumentSet(constructorArguments, callExpr, this);
+                    ? new ArgumentSet(initFunc, 0, cls, callExpr, this)
+                    : new ArgumentSet(constructorArguments, callExpr, this);
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet);

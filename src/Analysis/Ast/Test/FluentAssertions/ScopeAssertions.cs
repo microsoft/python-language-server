@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .Then
                 .AssertAtIndex<IScope, TChildScope>(childScopes, index, subjectName, "child scope");
 
-            return new AndWhichConstraint<TScopeAssertions, TChildScope>((TScopeAssertions) this, (TChildScope) childScopes[index]);
+            return new AndWhichConstraint<TScopeAssertions, TChildScope>((TScopeAssertions)this, (TChildScope)childScopes[index]);
         }
 
         [CustomAssertion]
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .ForCondition(scopeMatch.IsNullOrEmpty())
                 .FailWith($"Expected to not have child scope with name {name} ");
 
-            return new AndConstraint<TScopeAssertions>((TScopeAssertions) this);
+            return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }
 
         [CustomAssertion]
@@ -83,21 +83,21 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .ForCondition(!scopeMatch.IsNullOrEmpty())
                 .FailWith($"Expected to have child scopes with name {name} ");
 
-            return new AndWhichConstraint<TScopeAssertions, List<IScope>>((TScopeAssertions) this, scopeMatch);
+            return new AndWhichConstraint<TScopeAssertions, List<IScope>>((TScopeAssertions)this, scopeMatch);
         }
 
         public AndWhichConstraint<TScopeAssertions, IPythonClassType> HaveClass(string name, string because = "", params object[] reasonArgs) {
             var v = HaveVariable(name, because, reasonArgs).Which;
             v.Value.Should().BeAssignableTo<IPythonClassType>();
 
-            return new AndWhichConstraint<TScopeAssertions, IPythonClassType>((TScopeAssertions) this, (IPythonClassType) v.Value);
+            return new AndWhichConstraint<TScopeAssertions, IPythonClassType>((TScopeAssertions)this, (IPythonClassType)v.Value);
         }
 
         public AndWhichConstraint<TScopeAssertions, IPythonFunctionType> HaveFunction(string name, string because = "", params object[] reasonArgs) {
             var f = HaveVariable(name, because, reasonArgs).Which;
             f.Value.Should().BeAssignableTo<IPythonFunctionType>();
 
-            return new AndWhichConstraint<TScopeAssertions, IPythonFunctionType>((TScopeAssertions) this, (IPythonFunctionType) f.Value);
+            return new AndWhichConstraint<TScopeAssertions, IPythonFunctionType>((TScopeAssertions)this, (IPythonFunctionType)f.Value);
         }
 
         public AndWhichConstraint<TScopeAssertions, IVariable> HaveVariable(string name, string because = "", params object[] reasonArgs) {
@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have variable '{name}'{{reason}}.");
 
-            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions) this, v);
+            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions)this, v);
         }
 
         public AndWhichConstraint<TScopeAssertions, IVariable> HaveGenericVariable(string name, string because = "", params object[] reasonArgs) {
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have generic variable '{name}'{{reason}}.");
 
-            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions) this, v);
+            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions)this, v);
         }
 
         public AndConstraint<TScopeAssertions> HaveClassVariables(params string[] classNames)
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 HaveVariable(className, because, reasonArgs).OfType(className, because, reasonArgs);
             }
 
-            return new AndConstraint<TScopeAssertions>((TScopeAssertions) this);
+            return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }
 
         public AndConstraint<TScopeAssertions> HaveFunctionVariables(params string[] functionNames)
@@ -145,7 +145,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 HaveVariable(functionName, because, reasonArgs).OfType(functionName, because, reasonArgs);
             }
 
-            return new AndConstraint<TScopeAssertions>((TScopeAssertions) this);
+            return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }
 
         public AndConstraint<TScopeAssertions> NotHaveVariable(string name, string because = "", params object[] reasonArgs) {
@@ -155,7 +155,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have no variable '{name}'{{reason}}.");
 
-            return new AndConstraint<TScopeAssertions>((TScopeAssertions) this);
+            return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }
     }
 }
