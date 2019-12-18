@@ -310,7 +310,7 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
-        public static bool TryGetZipFilePath(string filePath, out string zipPath, out string relativeZipPath) {
+        public static bool TryGetZipFilePath(IFileSystem fs, string filePath, out string zipPath, out string relativeZipPath) {
             zipPath = string.Empty;
             relativeZipPath = string.Empty;
             if (string.IsNullOrEmpty(filePath)) {
@@ -324,7 +324,7 @@ namespace Microsoft.Python.Core.IO {
             }
 
             while (!string.IsNullOrEmpty(workingPath)) {
-                if (IsZipFile(workingPath, out zipPath)) {
+                if (IsZipFile(fs, workingPath, out zipPath)) {
                     // File path is '..\\test\\test.zip\\test\\a.py'
                     // Working path is '..\\test\\test.zip'
                     // Relative path in zip file becomes 'test/a.py'
@@ -349,9 +349,9 @@ namespace Microsoft.Python.Core.IO {
         /// Returns whether the given file path is a path to a zip (or egg) file
         /// The path can be of the form ..\\test.zip or ..\\test.zip\\
         /// </summary>
-        public static bool IsZipFile(string rawZipPath, out string zipPath) {
+        public static bool IsZipFile(IFileSystem fs, string rawZipPath, out string zipPath) {
             var path = NormalizePathAndTrim(rawZipPath);
-            if (!File.Exists(path)) {
+            if (!fs.FileExists(path)) {
                 zipPath = string.Empty;
                 return false;
             }

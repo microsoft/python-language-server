@@ -25,7 +25,7 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public string ReadAllText(string filePath) {
-            if (PathUtils.TryGetZipFilePath(filePath, out var zipPath, out var relativeZipPath)) {
+            if (PathUtils.TryGetZipFilePath(this, filePath, out var zipPath, out var relativeZipPath)) {
                 return PathUtils.GetZipContent(zipPath, relativeZipPath);
             }
             return File.ReadAllText(filePath);

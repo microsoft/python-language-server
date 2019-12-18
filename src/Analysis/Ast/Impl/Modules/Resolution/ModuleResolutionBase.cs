@@ -112,7 +112,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, allowNonRooted: false, out _);
                 }
 
-                if (PathUtils.TryGetZipFilePath(root, out var zipFilePath, out var _) && File.Exists(zipFilePath)) {
+                if (PathUtils.TryGetZipFilePath(FileSystem, root, out var zipFilePath, out var _)) {
                     foreach (var moduleFile in PathUtils.EnumerateZip(zipFilePath)) {
                         cancellationToken.ThrowIfCancellationRequested();
                         if (!PathUtils.PathStartsWith(moduleFile.FullName, "EGG-INFO")) {
