@@ -97,9 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     return false;
                 }
                 if (baseWalk && ifTrue) {
-                    Expression = node is ModuleName m
-                        ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex)
-                        : node;
+                    Expression = node is ModuleName m ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex) : node;
                 }
                 return baseWalk;
             }
@@ -189,9 +187,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             }
 
             public override bool Walk(ListComprehension node) => Walk(node);
-            
+
             public override bool Walk(SetComprehension node) => Walk(node);
-            
+
             public override bool Walk(DictionaryComprehension node) => Walk(node);
 
             private bool Walk(Comprehension node) {
@@ -425,11 +423,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                             return Save(node.OperatorIndex, true, "in");
                         case PythonOperator.NotIn:
                             return Save(node.OperatorIndex, true, "not") &&
-                                   Save(node.GetIndexOfSecondOp(_ast), true, "in");
+                                Save(node.GetIndexOfSecondOp(_ast), true, "in");
                         case PythonOperator.Is:
                         case PythonOperator.IsNot:
                             return Save(node.OperatorIndex, true, "is") &&
-                                   Save(node.GetIndexOfSecondOp(_ast), true, "not");
+                                Save(node.GetIndexOfSecondOp(_ast), true, "not");
                     }
                     return true;
                 }
@@ -527,7 +525,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         return false;
                     }
                     return Save(node.GetIndexOfWith(_ast), true, "with") &&
-                           node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
+                        node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
                 return false;
             }
