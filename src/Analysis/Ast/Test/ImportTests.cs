@@ -219,6 +219,22 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnresolvedImportInTry() {
+            var analysis = await GetAnalysisAsync(@"
+def foo():
+    try:
+        import nonexistent
+    except:
+        pass
+");
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(4, 16, 4, 27);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FromFuture() {
             var analysis = await GetAnalysisAsync(@"from __future__ import print_function", PythonVersions.LatestAvailable2X);
             analysis.Diagnostics.Should().BeEmpty();

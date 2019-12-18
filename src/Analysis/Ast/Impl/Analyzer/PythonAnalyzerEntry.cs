@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -83,15 +84,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
 
-        public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) {
-            _previousAnalysis = emptyAnalysis;
-            _module = emptyAnalysis.Document;
+        public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) : this(emptyAnalysis.Document, emptyAnalysis) {
+            _bufferVersion = -1;
+        }
+
+        public PythonAnalyzerEntry(CachedAnalysis analysis) : this(analysis.Document, analysis) {
+            _bufferVersion = 0;
+            _analysisTcs.SetResult(analysis);
+        }
+
+        private PythonAnalyzerEntry(IPythonModule module, IDocumentAnalysis analysis) {
+            _previousAnalysis = analysis;
+            _module = module;
             _moduleType = _module.ModuleType;
 
-            _bufferVersion = -1;
             _analysisVersion = 0;
             _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
+
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken)
             => _analysisTcs.Task.WaitAsync(cancellationToken);
@@ -187,8 +197,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var dependenciesHashSet = new HashSet<AnalysisModuleKey>();
-            foreach (var dependency in analysisDependencies) {
-                if (dependency != module && (dependency.ModuleType == ModuleType.User && dependency.Analysis.Version < version || dependency.Analysis is EmptyAnalysis)) {
+            foreach (var dependency in analysisDependencies.ExcludeDefault().Where(d => d.ModuleType != ModuleType.Specialized)) {
+                if (!dependency.Equals(module) &&
+                    (dependency.ModuleType == ModuleType.User && dependency.Analysis.Version < version || dependency.Analysis is EmptyAnalysis)) {
                     dependenciesHashSet.Add(new AnalysisModuleKey(dependency));
                 }
             }
@@ -248,15 +259,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
             var dependencies = new HashSet<AnalysisModuleKey>();
-            if (_bufferVersion > bufferVersion) {
+            if (_bufferVersion > bufferVersion || module.ModuleType == ModuleType.Specialized) {
                 return dependencies;
             }
 
-            var dependencyProvider = (module as IAnalyzable)?.DependencyProvider;
-            var moduleDeps = dependencyProvider?.GetDependencies(ast);
-            if (moduleDeps != null) {
-                dependencies.UnionWith(moduleDeps);
-            }
+            var dw = new DependencyWalker(_module, ast);
+            dependencies.UnionWith(dw.Dependencies);
 
             dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;

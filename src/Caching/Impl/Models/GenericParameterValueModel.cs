@@ -13,11 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+
 namespace Microsoft.Python.Analysis.Caching.Models {
     /// <summary>
     /// Model for actual values assigned to generic parameters.
     /// I.e. if class is based on Generic[T], what is assigned to T.
     /// </summary>
+    [Serializable]
     internal sealed class GenericParameterValueModel {
         /// <summary>
         /// Generic parameter name as defined by TypeVar, such as T.

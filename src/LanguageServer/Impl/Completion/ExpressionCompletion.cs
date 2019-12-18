@@ -57,8 +57,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             // See if we are completing on self. Note that we may be inside inner function
             // that does not necessarily have 'self' argument so we are looking beyond local
             // scope. We then check that variable type matches the class type, if any.
-            var selfVariable = eval.LookupNameInScopes("self");
-            var completingOnSelf = cls.Equals(selfVariable?.GetPythonType()) && e is NameExpression nex && nex.Name == "self";
+            var classVariable = eval.LookupNameInScopes("self") ?? eval.LookupNameInScopes("cls");
+            var completingOnClass = cls.Equals(classVariable?.GetPythonType()) && e is NameExpression nex && (nex.Name == "self" || nex.Name == "cls");
 
             var items = new List<CompletionItem>();
             var names = cls.GetMemberNames().ToArray();
@@ -73,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 var unmangledName = cls.UnmangleMemberName(t);
                 if (!string.IsNullOrEmpty(unmangledName)) {
                     // Hide private variables outside of the class scope.
-                    if (!completingOnSelf && cls.IsPrivateMember(t)) {
+                    if (!completingOnClass && cls.IsPrivateMember(t)) {
                         continue;
                     }
                     items.Add(context.ItemSource.CreateCompletionItem(unmangledName, m, cls));

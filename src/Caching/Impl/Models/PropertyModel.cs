@@ -15,7 +15,7 @@
 
 using System;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -24,24 +24,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     internal sealed class PropertyModel : CallableModel {
         public string ReturnType { get; set; }
+        public bool IsReadOnly { get; set; }
+
         public PropertyModel() { } // For de-serializer from JSON
 
-        [NonSerialized] private PythonPropertyType _property;
-
-        public PropertyModel(IPythonPropertyType prop) : base(prop) {
-            ReturnType = prop.ReturnType.GetPersistentQualifiedName();
-        }
-
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
-            => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), Documentation, declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            _property.SetDocumentation(Documentation);
-
-            var o = new PythonFunctionOverload(_property, mf.DefaultLocation);
-            o.SetDocumentation(Documentation);
-            o.SetReturnValue(mf.ConstructMember(ReturnType), true);
-            _property.AddOverload(o);
+        public PropertyModel(IPythonPropertyType prop, IServiceContainer services) : base(prop, services) {
+            ReturnType = prop.ReturnType.GetPersistentQualifiedName(services);
+            IsReadOnly = prop.IsReadOnly;
         }
     }
 }

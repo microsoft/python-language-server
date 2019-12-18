@@ -16,55 +16,47 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Caching.Lazy;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class RestoredGlobalScope : IRestoredGlobalScope {
+    internal sealed class RestoredGlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
-        private ModuleModel _model; // Non-readonly b/c of DEBUG conditional.
-        private ModuleFactory _factory; // Non-readonly b/c of DEBUG conditional.
 
-        public RestoredGlobalScope(ModuleModel model, IPythonModule module) {
-            _model = model ?? throw new ArgumentNullException(nameof(model));
+        public RestoredGlobalScope(ModuleModel model, IPythonModule module, IServiceContainer services) {
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
-            _factory = new ModuleFactory(_model, Module, this);
-            DeclareVariables();
         }
 
-        public void ReconstructVariables() {
-            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
-            foreach (var m in models.Concat(_model.Variables)) {
-                m.Populate(_factory, null, this);
-            }
-            // TODO: re-declare __doc__, __name__, etc.
-#if !DEBUG
-            _model = null;
-            _factory = null;
-#endif
-        }
-
-        private void DeclareVariables() {
+        public void Construct(ModuleModel model, IServiceContainer services) {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-            var mf = new ModuleFactory(_model, Module, this);
+            var mf = new ModuleFactory(model, Module, this, services);
 
             // Generics first
-            var typeVars = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
-            foreach (var m in typeVars) {
-                _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
+            foreach (var m in model.TypeVars) {
+                var member = MemberFactory.CreateMember(m, mf, this, null);
+                _scopeVariables.DeclareVariable(m.Name, member, VariableSource.Generic, mf.DefaultLocation);
             }
 
-            // Declare variables in the order of appearance since later variables
+            var models = model.NamedTuples
+                .Concat<MemberModel>(model.Classes).Concat(model.Functions); //.Concat(_model.SubModules);
+            foreach (var m in models) {
+                var member = MemberFactory.CreateMember(m, mf, this, null);
+                _scopeVariables.DeclareVariable(m.Name, member, VariableSource.Declaration, mf.DefaultLocation);
+            }
+
+            // Now variables in the order of appearance since later variables
             // may use types declared in the preceding ones.
-            foreach (var vm in _model.Variables.OrderBy(m => m.IndexSpan.Start)) {
-                var v = (IVariable)vm.Create(mf, null, this);
-                _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
+            foreach (var vm in model.Variables.OrderBy(m => m.IndexSpan.Start)) {
+                var member = MemberFactory.CreateMember(vm, mf, this, null);
+                _scopeVariables.DeclareVariable(vm.Name, member, VariableSource.Declaration, mf.DefaultLocation);
             }
         }
 
@@ -74,6 +66,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public IScopeNode Node => null;
         public IScope OuterScope => null;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
+        public IScope GetChildScope(IScopeNode node) => null;
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Empty<IScope>();
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Empty<IScope>();
         public IVariableCollection Variables => _scopeVariables;

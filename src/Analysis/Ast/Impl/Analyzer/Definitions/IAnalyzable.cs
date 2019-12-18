@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
@@ -21,14 +22,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// </summary>
     internal interface IAnalyzable {
         /// <summary>
-        /// Returns object that can calculate dependencies of this entry.
-        /// </summary>
-        IDependencyProvider DependencyProvider { get; }
-
-        /// <summary>
         /// Notifies document that analysis is about to begin.
         /// </summary>
         void NotifyAnalysisBegins();
+
+        /// <summary>
+        /// Performs standard analysis pass. Does not include any restoration from databases.
+        /// </summary>
+        ModuleWalker Analyze(PythonAst ast);
 
         /// <summary>
         /// Notifies document that its analysis is now complete.

@@ -94,7 +94,8 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var modules = new List<IPythonModule>();
 
-            foreach (var pyd in PathUtils.EnumerateFiles(fs, dllsDir, "*", recurse: false).Select(f => f.FullName).Where(ModulePath.IsPythonFile)) {
+            foreach (var pyd in PathUtils.EnumerateFiles(fs, dllsDir, "*", recurse: false)
+                .Select(f => f.FullName).Where(ModulePath.IsPythonFile)) {
                 var mp = ModulePath.FromFullPath(pyd);
                 if (mp.IsDebug) {
                     continue;

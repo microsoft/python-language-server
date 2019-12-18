@@ -14,10 +14,25 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [Serializable]
-    internal sealed class DottedNameModel {
-        public string[] NameParts { get; set; }
-    }
+    //[Serializable]
+    //internal sealed class SubmoduleModel: MemberModel {
+    //    public string UniqueId { get; set; }
+    //    public string FilePath { get; set; }
+    //    public string Documentation { get; set; }
+
+    //    public SubmoduleModel(IPythonModule m, IServiceContainer services) {
+    //        var uniqueId = m.GetUniqueId(services);
+    //        Id = uniqueId.GetStableHash();
+    //        UniqueId = uniqueId;
+    //        Name = m.Name;
+    //        QualifiedName = m.QualifiedName;
+    //        FilePath = m.FilePath;
+    //        Documentation = m.Documentation;
+    //    }
+    //}
 }

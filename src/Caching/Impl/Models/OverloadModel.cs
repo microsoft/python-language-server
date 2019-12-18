@@ -13,9 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
     internal sealed class OverloadModel {
         public ParameterModel[] Parameters { get; set; }
         public string ReturnType { get; set; }
+        public string Documentation { get; set; }
     }
 }

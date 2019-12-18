@@ -86,18 +86,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override bool Walk(ImportStatement node) => ImportHandler.HandleImport(node);
         public override bool Walk(NonlocalStatement node) => NonLocalHandler.HandleNonLocal(node);
 
-        public override bool Walk(TryStatement node) {
-            TryExceptHandler.HandleTryExcept(node);
-            return base.Walk(node);
-        }
+        public override bool Walk(TryStatement node) => TryExceptHandler.HandleTryExcept(node);
 
-        public override bool Walk(WhileStatement node) {
-            LoopHandler.HandleWhile(node);
-            return base.Walk(node);
-        }
+        public override bool Walk(WhileStatement node) => LoopHandler.HandleWhile(node);
 
         public override bool Walk(WithStatement node) {
-            WithHandler.HandleWith(node);
+            WithHandler.HandleWith(node); // HandleWith does not walk the body.
             return base.Walk(node);
         }
         #endregion

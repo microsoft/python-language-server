@@ -25,6 +25,8 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class NamedTupleType : TypingTupleType, ITypingNamedTupleType {
+        private string _name;
+
         // Since named tuple operates as a new, separate type, we need to track
         // its location rather than delegating down to the general wrapper over
         // Python built-in tuple.
@@ -39,7 +41,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IndexSpan indexSpan)
             : base(itemTypes, declaringModule, declaringModule.Interpreter) {
-            Name = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
+            _name = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
             ItemNames = itemNames;
 
             var typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.Name);
@@ -49,11 +51,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             _locatedMember = new NamedTupleLocatedMember(new Location(declaringModule, indexSpan));
         }
 
+        #region ITypingNamedTupleType
         public IReadOnlyList<string> ItemNames { get; }
+        public void SetName(string name) => _name = name;
+        #endregion
 
         #region IPythonType
-        public override string Name { get; }
-        public override string QualifiedName => $"{DeclaringModule.Name}:{Name}"; // Named tuple name is a type name as class.
+        public override string Name => _name;
+        public override string QualifiedName => $"{DeclaringModule.Name}:{Name}";
         public override bool IsSpecialized => true;
         public override string Documentation { get; }
         #endregion
