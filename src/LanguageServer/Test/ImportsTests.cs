@@ -1047,8 +1047,8 @@ module2.";
             );
         }
 
-        [DataRow("pygame.egg")]
-        [DataRow("pygame.zip")]
+        [DataRow("pygamemock.egg")]
+        [DataRow("pygamemock.zip")]
         [DataTestMethod, Priority(0)]
         public async Task PygameEggZip(string eggZipFilePath) {
             var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
@@ -1065,15 +1065,9 @@ module2.";
             var analysis = await module.GetAnalysisAsync(-1);
             analysis.Should().HaveVariable("pygame").Which.Should().HaveMembers(
                 "transform",
-                "font",
                 "sysfont",
                 "mixer",
-                "movie",
-                "scrap",
-                "surfarray",
-                "sndarray",
-                "fastevent",
-                "imageext"
+                "movie"
             );
         }
     }
