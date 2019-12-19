@@ -31,5 +31,21 @@ namespace Microsoft.Python.Parsing.Extensions {
 
         public static IEnumerable<INode> SelectChildNodesBreadthFirst(this IEnumerable<INode> nodes)
             => nodes.SelectMany(n => n.ChildNodesBreadthFirst());
+
+        #region Backwards compatibility
+        
+        public static IEnumerable<Node> ChildNodesDepthFirst(this Node node)
+            => node.TraverseDepthFirst(n => n.GetChildNodes());
+
+        public static IEnumerable<Node> SelectChildNodesDepthFirst(this IEnumerable<Node> nodes)
+            => nodes.SelectMany(n => n.ChildNodesDepthFirst());
+
+        public static IEnumerable<Node> ChildNodesBreadthFirst(this Node node)
+            => node.TraverseBreadthFirst(n => n.GetChildNodes());
+
+        public static IEnumerable<Node> SelectChildNodesBreadthFirst(this IEnumerable<Node> nodes)
+            => nodes.SelectMany(n => n.ChildNodesBreadthFirst());
+        
+        #endregion
     }
 }
