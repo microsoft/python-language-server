@@ -47,7 +47,6 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly IFileSystem _fs;
         private readonly AnalysisCachingLevel _defaultCachingLevel;
         private readonly CacheWriter _cacheWriter;
-        private AnalysisCachingLevel? _cachingLevel;
 
         public ModuleDatabase(IServiceManager sm, string cacheFolder = null) {
             _services = sm;
@@ -74,27 +73,6 @@ namespace Microsoft.Python.Analysis.Caching {
             }
             return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)
                 ? RestoreModule(model) : null;
-        }
-
-        /// <summary>
-        /// Determines if module analysis exists in the storage.
-        /// </summary>
-        public bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType) {
-            if (GetCachingLevel() == AnalysisCachingLevel.None) {
-                return false;
-            }
-
-            var key = new AnalysisModuleKey(name, filePath);
-            if (_searchResults.TryGetValue(key, out var result)) {
-                return result;
-            }
-
-            WithRetries.Execute(() => {
-                var dbPath = FindDatabaseFile(name, filePath, moduleType);
-                _searchResults[key] = result = !string.IsNullOrEmpty(dbPath);
-                return result;
-            }, "Unable to find database file for {name}.", _log);
-            return false;
         }
 
         public async Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default) {
@@ -192,9 +170,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         private AnalysisCachingLevel GetCachingLevel()
-            => _cachingLevel
-               ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
-               ?? _defaultCachingLevel;
+            => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? _defaultCachingLevel;
 
         public void Dispose() => _cacheWriter.Dispose();
     }
