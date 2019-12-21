@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.IO;
 using FluentAssertions;
 using Microsoft.Python.Core.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,37 +26,22 @@ namespace Microsoft.Python.Core.Tests {
         [TestInitialize]
         public void TestInitialize() {
             _fileSystem = Substitute.For<IFileSystem>();
-            _fileSystem.FileExists(default).Returns(true);
-        }
-
-        [TestMethod, Priority(0)]
-        public void ZipFileUNCPath() {
-            PathUtils.TryGetZipFilePath(_fileSystem, @"\\server\home\share\test.zip", out var zipPath, out var relativeZipPath);
-            zipPath.Should().Be(@"\\server\home\share\test.zip");
-            relativeZipPath.Should().BeEmpty();
-
-            PathUtils.TryGetZipFilePath(_fileSystem, @"\\server\home\share\test.zip\test\a.py", out zipPath, out relativeZipPath);
-            zipPath.Should().Be(@"\\server\home\share\test.zip");
-            relativeZipPath.Should().Be("test/a.py");
-
-            PathUtils.TryGetZipFilePath(_fileSystem, "\\path\\foo\\baz\\test.zip\\test\\a.py", out zipPath, out relativeZipPath);
-            zipPath.Should().Be("\\path\\foo\\baz\\test.zip");
-            relativeZipPath.Should().Be("test/a.py");
+            _fileSystem.FileExists(default).ReturnsForAnyArgs(true);
         }
 
         [TestMethod, Priority(0)]
         public void ZipFilePath() {
-            PathUtils.TryGetZipFilePath(_fileSystem, "\\path\\foo\\baz\\test.zip", out var zipPath, out var relativeZipPath);
-            zipPath.Should().Be("\\path\\foo\\baz\\test.zip");
+            PathUtils.TryGetZipFilePath(_fileSystem, Path.Combine("path", "foo", "baz", "test.zip"), out var zipPath, out var relativeZipPath);
+            zipPath.Should().Be(Path.Combine("path", "foo", "baz", "test.zip"));
             relativeZipPath.Should().BeEmpty();
 
-            PathUtils.TryGetZipFilePath(_fileSystem, "\\path\\foo\\baz\\test.zip\\test\\a.py", out zipPath, out relativeZipPath);
-            zipPath.Should().Be("\\path\\foo\\baz\\test.zip");
-            relativeZipPath.Should().Be("test/a.py");
+            PathUtils.TryGetZipFilePath(_fileSystem, Path.Combine("path", "foo", "baz", "test.zip", "test", "a.py"), out zipPath, out relativeZipPath);
+            zipPath.Should().Be(Path.Combine("path", "foo", "baz", "test.zip"));
+            relativeZipPath.Should().Be(Path.Combine("test", "a.py"));
 
-            PathUtils.TryGetZipFilePath(_fileSystem, "\\path\\foo\\baz\\test.zip\\test\\foo\\baz.py", out zipPath, out relativeZipPath);
-            zipPath.Should().Be("\\path\\foo\\baz\\test.zip");
-            relativeZipPath.Should().Be("test/foo/baz.py");
+            PathUtils.TryGetZipFilePath(_fileSystem, Path.Combine("path", "foo", "baz", "test.zip", "test", "foo", "baz.py"), out zipPath, out relativeZipPath);
+            zipPath.Should().Be(Path.Combine("path", "foo", "baz", "test.zip"));
+            relativeZipPath.Should().Be(Path.Combine("test", "foo", "baz.py"));
         }
     }
 }
