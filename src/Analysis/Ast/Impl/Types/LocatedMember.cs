@@ -65,8 +65,10 @@ namespace Microsoft.Python.Analysis.Types {
                     (this.DeclaringModule?.ModuleType == ModuleType.Builtins && MemberType != PythonMemberType.Function)) {
                     return;
                 }
+                var keepReferencesInLibraries = 
+                    location.Module.Analysis.ExpressionEvaluator.Services.GetService<IAnalysisOptionsProvider>()?.Options.KeepLibraryAst == true;
                 // Don't add references to library code.
-                if (location.Module?.ModuleType == ModuleType.User && !location.Equals(Location)) {
+                if ((location.Module?.ModuleType == ModuleType.User || keepReferencesInLibraries) && !location.Equals(Location)) {
                     _references = _references ?? new HashSet<Location>();
                     _references.Add(location);
                 }
