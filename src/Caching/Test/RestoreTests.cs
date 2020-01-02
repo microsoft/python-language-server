@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
@@ -57,6 +58,8 @@ def func2() -> C2: ...
 
             var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
             Services.AddService(dbs);
+
+            EnableCaching();
             await dbs.StoreModuleAnalysisAsync(analysis2, immediate: true, CancellationToken.None);
 
             await Services.GetService<IPythonAnalyzer>().ResetAnalyzer();
@@ -101,15 +104,28 @@ def func2() -> C2: ...
             var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
             Services.AddService(dbs);
 
+            EnableCaching();
+
             var importedModules = interpreter.ModuleResolution.GetImportedModules();
             foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
                 await dbs.StoreModuleAnalysisAsync(m.Analysis, immediate: true);
             }
-            
+
             importedModules = interpreter.TypeshedResolution.GetImportedModules();
             foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
                 await dbs.StoreModuleAnalysisAsync(m.Analysis, immediate: true);
             }
+        }
+
+        private void EnableCaching() {
+            var a = Services.GetService<IAnalysisOptionsProvider>();
+            Services.RemoveService(a);
+            var aop = Substitute.For<IAnalysisOptionsProvider>();
+            aop.Options.Returns(x => new AnalysisOptions {
+                AnalysisCachingLevel = AnalysisCachingLevel.Library,
+                StubOnlyAnalysis = a.Options.StubOnlyAnalysis
+            });
+            Services.AddService(aop);
         }
     }
 }
