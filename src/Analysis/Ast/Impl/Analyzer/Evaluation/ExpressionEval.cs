@@ -70,7 +70,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonType UnknownType => Interpreter.UnknownType;
         public Location DefaultLocation { get; }
         public IPythonModule BuiltinsModule => Interpreter.ModuleResolution.BuiltinsModule;
-        public bool StubOnlyAnalysis => _analysisOptions.StubOnlyAnalysis && Module.Stub != null && Module.ModuleType != ModuleType.User;
+        
+        public bool StubOnlyAnalysis
+            => _analysisOptions.StubOnlyAnalysis
+               && Module.Stub != null && Module.ModuleType != ModuleType.User && Module.Stub.IsTypeshed;
+        
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
