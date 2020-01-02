@@ -265,7 +265,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope, LookupOptions.All);
             var v = scope?.Variables[name];
-            if (m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins || v.IsUnknown()) {
+            if (m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins || v == null) {
                 return null;
             }
 
