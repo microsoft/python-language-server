@@ -2465,7 +2465,7 @@ namespace Microsoft.Python.Parsing {
         [Conditional("DUMP_TOKENS")]
         private void DumpToken() => Console.WriteLine("--> `{0}` {1}", GetTokenString().Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t"), TokenSpan);
 
-        private void BufferBack(int count = -1) => SeekRelative(count);
+        internal void BufferBack(int count = -1) => SeekRelative(count);
         internal string GetTokenString() => new string(_buffer, _start, _tokenEnd - _start);
         private int TokenLength => _tokenEnd - _start;
 

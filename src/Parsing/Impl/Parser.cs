@@ -2980,10 +2980,24 @@ namespace Microsoft.Python.Parsing {
             var ret = ParseFactor();
             while (true) {
                 var t = PeekToken();
+                // Matmul comes as 'At' token since during tokenization
+                // It is unclear if @ is an attribute or part of an expression.
+                // Thus newlines are not trimmed as it happens with other operator
+                // tokens. Therefore here we may have bunch of newlines before @
+                // while with regular operators like +/-/* etc we don't. So we
+                // have to peek farther ahead to see if @ follows.
+                var wsCount = 0;
+                while (t.Kind == TokenKind.NewLine || t.Kind == TokenKind.Indent) {
+                    wsCount++;
+                    NextToken();
+                    t = PeekToken();
+                }
                 if (_langVersion >= PythonLanguageVersion.V35 && t.Kind == TokenKind.At) {
                     t = Tokens.MatMultiplyToken;
                 }
+
                 if (!(t is OperatorToken ot)) {
+                    _tokenizer.BufferBack(wsCount);
                     return ret;
                 }
 

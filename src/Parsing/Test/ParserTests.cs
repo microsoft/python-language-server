@@ -1556,13 +1556,13 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseFile("MatMulOperator2.py", ErrorSink.Null, version),
                     CheckSuite(
-                        CheckBinaryStmt(One, PythonOperator.MatMultiply, Two)
+                        CheckAssignment(Fob, CheckParenExpr(CheckBinaryExpression(One, PythonOperator.MatMultiply, Two)))
                     )
                 );
             }
 
             foreach (var version in V3Versions.Except(V35AndUp)) {
-                ParseErrors("MatMulOperator.py", version, new[] {
+                ParseErrors("MatMulOperator2.py", version, new[] {
                     new ErrorResult("unexpected token '@'", new SourceSpan(1, 3, 1, 4))
                 });
             }
@@ -4463,6 +4463,8 @@ pass
             };
         }
 
+
+
         private static Action<Statement> CheckUnaryStmt(PythonOperator op, Action<Expression> value) {
             return CheckExprStmt(CheckUnaryExpression(op, value));
         }
@@ -4869,7 +4871,7 @@ pass
             };
         }
 
-        private Action<Expression> CheckParenExpr(Action<Expression> value) {
+        private static Action<Expression> CheckParenExpr(Action<Expression> value) {
             return expr => {
                 Assert.AreEqual(typeof(ParenthesisExpression), expr.GetType());
                 var paren = (ParenthesisExpression)expr;
