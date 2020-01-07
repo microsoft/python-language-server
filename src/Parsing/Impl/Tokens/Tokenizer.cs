@@ -1822,8 +1822,14 @@ namespace Microsoft.Python.Parsing {
                 case '~':
                     return Tokens.TwiddleToken;
                 case '@':
-                    if (LanguageVersion >= PythonLanguageVersion.V35 && NextChar('=')) {
-                        return Tokens.MatMultiplyEqualToken;
+                    if (LanguageVersion >= PythonLanguageVersion.V35) {
+                        if (NextChar('=')) {
+                            return Tokens.MatMultiplyEqualToken;
+                        }
+                        if (GroupingLevel > 0) {
+                            // @ can't be a decorator here.
+                            return Tokens.MatMultiplyToken;
+                        }
                     }
                     return Tokens.AtToken;
             }

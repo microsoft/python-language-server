@@ -1563,7 +1563,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions.Except(V35AndUp)) {
                 ParseErrors("MatMulOperator2.py", version, new[] {
-                    new ErrorResult("unexpected token '@'", new SourceSpan(1, 3, 1, 4))
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(2, 6, 3, 1))
                 });
             }
         }
