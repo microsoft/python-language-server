@@ -2986,6 +2986,7 @@ namespace Microsoft.Python.Parsing {
                 if (!(t is OperatorToken ot)) {
                     return ret;
                 }
+
                 var prec = ot.Precedence;
                 if (prec >= precedence) {
                     NextToken();

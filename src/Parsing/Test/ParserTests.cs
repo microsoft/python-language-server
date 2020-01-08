@@ -4463,8 +4463,6 @@ pass
             };
         }
 
-
-
         private static Action<Statement> CheckUnaryStmt(PythonOperator op, Action<Expression> value) {
             return CheckExprStmt(CheckUnaryExpression(op, value));
         }
