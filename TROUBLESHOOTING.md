@@ -86,6 +86,10 @@ fill in the rest of the information. Before the second pass is complete, some in
 will be incomplete, and some warnings about unresolved imports may occur. The analysis is
 complete when the status message (in the bottom bar) disappears.
 
+### Completions do not update and/or import is still being reported as unresolved after `pip install`
+Library search path watching is currently disabled by default in order to mitigate issues reported
+in https://github.com/microsoft/python-language-server/pull/1841. If you require this feature, set
+`"python.analysis.watchSearchPaths": true` in your user settings.
 
 ## Filing an issue
 

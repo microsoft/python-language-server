@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
-                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
+                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", false));
                 HandleDiagnosticsChanges(pythonSection, settings);
                 HandleCodeActionsChanges(pythonSection);
 

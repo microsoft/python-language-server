@@ -1551,6 +1551,24 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void MatMulMultilineOperator() {
+            foreach (var version in V35AndUp) {
+                CheckAst(
+                    ParseFile("MatMulOperator2.py", ErrorSink.Null, version),
+                    CheckSuite(
+                        CheckAssignment(Fob, CheckParenExpr(CheckBinaryExpression(One, PythonOperator.MatMultiply, Two)))
+                    )
+                );
+            }
+
+            foreach (var version in V3Versions.Except(V35AndUp)) {
+                ParseErrors("MatMulOperator2.py", version, new[] {
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(2, 6, 3, 1))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void GroupingRecovery() {
             foreach (var version in AllVersions) {
                 CheckAst(
@@ -4851,7 +4869,7 @@ pass
             };
         }
 
-        private Action<Expression> CheckParenExpr(Action<Expression> value) {
+        private static Action<Expression> CheckParenExpr(Action<Expression> value) {
             return expr => {
                 Assert.AreEqual(typeof(ParenthesisExpression), expr.GetType());
                 var paren = (ParenthesisExpression)expr;
