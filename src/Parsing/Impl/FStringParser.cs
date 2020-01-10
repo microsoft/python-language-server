@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -32,9 +31,8 @@ namespace Microsoft.Python.Parsing {
         // Static fields
         private static readonly StringSpan DoubleOpen = new StringSpan("{{");
         private static readonly StringSpan DoubleClose = new StringSpan("}}");
-        private static readonly StringSpan BackslashN = new StringSpan("\\N");
-
         private static readonly StringSpan NotEqual = new StringSpan("!=");
+        private static readonly StringSpan BackslashN = new StringSpan("\\N");
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -239,7 +237,7 @@ namespace Microsoft.Python.Parsing {
                     switch (ch) {
                         case '=':
                         case '!':
-                            if (!IsAfterNext('=')) {
+                            if (!IsEqualsAfterNext) {
                                 return;
                             }
                             appendExtra = true;
@@ -247,7 +245,7 @@ namespace Microsoft.Python.Parsing {
 
                         case '<':
                         case '>':
-                            appendExtra = IsAfterNext('=');
+                            appendExtra = IsEqualsAfterNext;
                             break;
                         
                         case '}':
@@ -505,6 +503,6 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private bool IsAfterNext(char c) => _fString.ElementAtOrDefault(_position + 1) == c;
+        private bool IsEqualsAfterNext => _position + 1 < _fString.Length && _fString[_position + 1] == '=';
     }
 }
