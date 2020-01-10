@@ -247,7 +247,7 @@ namespace Microsoft.Python.Parsing {
                         case '>':
                             appendExtra = IsEqualsAfterNext;
                             break;
-                        
+
                         case '}':
                         case ':':
                             return;
@@ -261,9 +261,13 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (quoteChar.HasValue) {
-                    HandleInsideString(ref quoteChar, ref stringType, appendExtra);
+                    HandleInsideString(ref quoteChar, ref stringType);
                 } else {
-                    HandleInnerExprOutsideString(ref quoteChar, ref stringType, appendExtra);
+                    HandleInnerExprOutsideString(ref quoteChar, ref stringType);
+                }
+
+                if (appendExtra) {
+                    _buffer.Append(NextChar());
                 }
             }
         }
@@ -323,7 +327,7 @@ namespace Microsoft.Python.Parsing {
             _buffer.Append(NextChar());
         }
 
-        private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType, bool appendExtra = false) {
+        private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(!quoteChar.HasValue);
 
             var ch = CurrentChar;
@@ -355,9 +359,6 @@ namespace Microsoft.Python.Parsing {
             }
 
             _buffer.Append(NextChar());
-            if (appendExtra) {
-                _buffer.Append(NextChar());
-            }
         }
 
         private static bool IsOpeningOf(char opening, char ch) {
@@ -371,7 +372,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private void HandleInsideString(ref char? quoteChar, ref int stringType, bool appendExtra = false) {
+        private void HandleInsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(quoteChar.HasValue);
 
             var ch = CurrentChar;
@@ -396,9 +397,6 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             _buffer.Append(NextChar());
-            if (appendExtra) {
-                _buffer.Append(NextChar());
-            }
         }
 
         private Expression CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
