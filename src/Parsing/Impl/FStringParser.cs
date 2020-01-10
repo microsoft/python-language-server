@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -31,9 +32,14 @@ namespace Microsoft.Python.Parsing {
         // Static fields
         private static readonly StringSpan DoubleOpen = new StringSpan("{{");
         private static readonly StringSpan DoubleClose = new StringSpan("}}");
+        private static readonly StringSpan BackslashN = new StringSpan("\\N");
+
         private static readonly StringSpan NotEqual = new StringSpan("!=");
         private static readonly StringSpan EqualEqual = new StringSpan("==");
-        private static readonly StringSpan BackslashN = new StringSpan("\\N");
+        private static readonly StringSpan LessEqual = new StringSpan("<=");
+        private static readonly StringSpan GreaterEqual = new StringSpan(">=");
+
+        private static readonly StringSpan[] TokensWithEqual = new[] { NotEqual, EqualEqual, LessEqual, GreaterEqual };
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -136,7 +142,7 @@ namespace Microsoft.Python.Parsing {
                 _buffer.Clear();
             }
 
-            Debug.Assert(CurrentChar == '}' || CurrentChar == '!' || CurrentChar == ':' || (_langVersion >= PythonLanguageVersion.V38 && CurrentChar == '='));
+            Debug.Assert(CurrentChar == '}' || CurrentChar == '!' || CurrentChar == ':' || CurrentChar == '=');
 
             MaybeReadEqualSpecifier();
             var conversion = MaybeReadConversionChar();
@@ -232,13 +238,32 @@ namespace Microsoft.Python.Parsing {
 
             while (!EndOfFString) {
                 var ch = CurrentChar;
+                var appendExtra = false;
+
                 if (!quoteChar.HasValue && _nestedParens.Count == 0) {
                     switch (ch) {
-                        case '!' when !IsNext(NotEqual):
-                        case '=' when !IsNext(EqualEqual) && _langVersion >= PythonLanguageVersion.V38:
+                        case '=':
+                        case '!':
+                            if (!IsAfterNext('=')) {
+                                return;
+                            }
+                            appendExtra = true;
+                            break;
+
+                        case '<':
+                        case '>':
+                            appendExtra = IsAfterNext('=');
+                            break;
+                        
                         case '}':
                         case ':':
                             return;
+                    }
+
+                    if (IsNext(NotEqual) || IsNext(EqualEqual)) {
+                        appendExtra = true;
+                    } else if (ch == '}' || ch == ':') {
+                        return;
                     }
                 }
 
@@ -249,9 +274,9 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (quoteChar.HasValue) {
-                    HandleInsideString(ref quoteChar, ref stringType);
+                    HandleInsideString(ref quoteChar, ref stringType, appendExtra);
                 } else {
-                    HandleInnerExprOutsideString(ref quoteChar, ref stringType);
+                    HandleInnerExprOutsideString(ref quoteChar, ref stringType, appendExtra);
                 }
             }
         }
@@ -311,7 +336,7 @@ namespace Microsoft.Python.Parsing {
             _buffer.Append(NextChar());
         }
 
-        private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType) {
+        private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType, bool appendExtra = false) {
             Debug.Assert(!quoteChar.HasValue);
 
             var ch = CurrentChar;
@@ -343,6 +368,9 @@ namespace Microsoft.Python.Parsing {
             }
 
             _buffer.Append(NextChar());
+            if (appendExtra) {
+                _buffer.Append(NextChar());
+            }
         }
 
         private static bool IsOpeningOf(char opening, char ch) {
@@ -356,7 +384,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private void HandleInsideString(ref char? quoteChar, ref int stringType) {
+        private void HandleInsideString(ref char? quoteChar, ref int stringType, bool appendExtra = false) {
             Debug.Assert(quoteChar.HasValue);
 
             var ch = CurrentChar;
@@ -381,6 +409,9 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             _buffer.Append(NextChar());
+            if (appendExtra) {
+                _buffer.Append(NextChar());
+            }
         }
 
         private Expression CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
@@ -484,5 +515,7 @@ namespace Microsoft.Python.Parsing {
                 return false;
             }
         }
+
+        private bool IsAfterNext(char c) => _fString.ElementAtOrDefault(_position + 1) == c;
     }
 }
