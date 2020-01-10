@@ -35,11 +35,6 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan BackslashN = new StringSpan("\\N");
 
         private static readonly StringSpan NotEqual = new StringSpan("!=");
-        private static readonly StringSpan EqualEqual = new StringSpan("==");
-        private static readonly StringSpan LessEqual = new StringSpan("<=");
-        private static readonly StringSpan GreaterEqual = new StringSpan(">=");
-
-        private static readonly StringSpan[] TokensWithEqual = new[] { NotEqual, EqualEqual, LessEqual, GreaterEqual };
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -258,12 +253,6 @@ namespace Microsoft.Python.Parsing {
                         case '}':
                         case ':':
                             return;
-                    }
-
-                    if (IsNext(NotEqual) || IsNext(EqualEqual)) {
-                        appendExtra = true;
-                    } else if (ch == '}' || ch == ':') {
-                        return;
                     }
                 }
 
