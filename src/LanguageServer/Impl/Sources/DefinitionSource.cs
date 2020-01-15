@@ -209,7 +209,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             // Import A as B
-            var asName = statement.AsNames.FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
+            var asName = statement.AsNames.ExcludeDefault().FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
             if (asName != null) {
                 var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
                 if (!value.IsUnknown()) {
