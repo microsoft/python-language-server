@@ -116,7 +116,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorResult("f-string: expecting '}'", new SourceSpan(19, 4, 19, 5)),
                 new ErrorResult("unexpected token 'import'", new SourceSpan(21, 4, 21, 10)),
                 new ErrorResult("f-string: empty expression not allowed", new SourceSpan(23, 4, 23, 5)),
-                new ErrorResult("unexpected token '='", new SourceSpan(25, 6, 25, 7)),
+                new ErrorResult("f-string: expecting '}' but found '='", new SourceSpan(25, 6, 25, 7)),
                 new ErrorResult("expected ':'", new SourceSpan(27, 12, 27, 12)),
                 new ErrorResult("f-string: lambda must be inside parentheses", new SourceSpan(27, 4, 27, 12)),
                 new ErrorResult("f-string: expecting '}'", new SourceSpan(29, 6, 29, 7)),
@@ -125,7 +125,9 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorResult("f-string: unmatched ')'", new SourceSpan(35, 4, 35, 5)),
                 new ErrorResult("f-string: unmatched ')'", new SourceSpan(37, 6, 37, 7)),
                 new ErrorResult("f-string: closing parenthesis '}' does not match opening parenthesis '('", new SourceSpan(39, 6, 39, 7)),
-                new ErrorResult("f-string: unmatched ']'", new SourceSpan(41, 4, 41, 5))
+                new ErrorResult("f-string: unmatched ']'", new SourceSpan(41, 4, 41, 5)),
+                new ErrorResult("unexpected EOF while parsing", new SourceSpan(43, 7, 43, 7)),
+                new ErrorResult("f-string: expecting '}' but found '='", new SourceSpan(43, 7, 43, 8))
             );
         }
 
@@ -408,6 +410,72 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.Equal, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.NotEqual, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.GreaterThanOrEqual, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.LessThanOrEqual, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.GreaterThan, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConditionalExpression(
+                                        CheckNameExpr("x"),
+                                        CheckBinaryExpression(CheckNameExpr("x"), PythonOperator.LessThan, CheckConstant(1.0)),
+                                        CheckConstant(0)
+                                    )
+                                )
+                            )
                         )
                     )
                 );
@@ -478,7 +546,9 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrors("FStringEqualsErrors.py",
                 PythonLanguageVersion.V38,
                 new ErrorResult("f-string: expecting '}' but found 'f'", new SourceSpan(1, 9, 1, 10)),
-                new ErrorResult("f-string: expecting '}' but found 'a'", new SourceSpan(2, 10, 2, 11))
+                new ErrorResult("f-string: expecting '}' but found 'a'", new SourceSpan(2, 10, 2, 11)),
+                new ErrorResult("unexpected EOF while parsing", new SourceSpan(3, 9, 3, 9)),
+                new ErrorResult("f-string: expecting '}' but found 'a'", new SourceSpan(3, 11, 3, 12))
             );
         }
 
@@ -1546,6 +1616,24 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V3Versions.Except(V35AndUp)) {
                 ParseErrors("MatMulOperator.py", version, new[] {
                     new ErrorResult("unexpected token '@'", new SourceSpan(1, 3, 1, 4))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void MatMulMultilineOperator() {
+            foreach (var version in V35AndUp) {
+                CheckAst(
+                    ParseFile("MatMulOperator2.py", ErrorSink.Null, version),
+                    CheckSuite(
+                        CheckAssignment(Fob, CheckParenExpr(CheckBinaryExpression(One, PythonOperator.MatMultiply, Two)))
+                    )
+                );
+            }
+
+            foreach (var version in V3Versions.Except(V35AndUp)) {
+                ParseErrors("MatMulOperator2.py", version, new[] {
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(2, 6, 3, 1))
                 });
             }
         }
@@ -4851,7 +4939,7 @@ pass
             };
         }
 
-        private Action<Expression> CheckParenExpr(Action<Expression> value) {
+        private static Action<Expression> CheckParenExpr(Action<Expression> value) {
             return expr => {
                 Assert.AreEqual(typeof(ParenthesisExpression), expr.GetType());
                 var paren = (ParenthesisExpression)expr;

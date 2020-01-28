@@ -209,7 +209,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             // Import A as B
-            var asName = statement.AsNames.FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
+            var asName = statement.AsNames.ExcludeDefault().FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
             if (asName != null) {
                 var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
                 if (!value.IsUnknown()) {
@@ -264,8 +264,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope, LookupOptions.All);
-            var v = scope?.Variables[name];
-            if (m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins || v.IsUnknown()) {
+            if(m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins) {
+                return null;
+            }
+
+            var v = scope.Variables[name];
+            if (v == null || (v.Source == VariableSource.Import && v.IsUnknown())) {
                 return null;
             }
 
