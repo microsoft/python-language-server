@@ -1511,5 +1511,39 @@ class Op:
             result = cs.GetCompletions(analysis, new SourceLocation(12, 13));
             result.Should().HaveLabels("__EQ", "__NOT_EQ", "__OP_LIST");
         }
+
+        [DataTestMethod, Priority(0)]
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task ImplicitSubmodule(bool imported) {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(
+                Path.Combine("package", "__init__.py"),
+                imported ? "import package.m1 as m2" : string.Empty
+                );
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m1", "__init__.py"), "x = 1");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            const string code = @"
+import package
+package.
+package.m1.
+";
+            var doc = rdt.OpenDocument(appUri, code);
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
+            result.Should().HaveLabels("m1");
+            result = cs.GetCompletions(analysis, new SourceLocation(4, 12));
+            if (imported) {
+                result.Should().HaveLabels("x");
+            } else {
+                result.Should().NotContainLabels("x");
+            }
+        }
     }
 }
