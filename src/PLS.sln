@@ -31,6 +31,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis.Caching.Tests", "Caching\Test\Microsoft.Python.Analysis.Caching.Tests.csproj", "{40CD3A74-B0B6-4A37-AE65-5B203C38D0E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests.LanguageServerClient", "UnitTests\LanguageServerClient\UnitTests.LanguageServerClient\UnitTests.LanguageServerClient.csproj", "{ECF43B73-5A46-4310-8B11-FFF2B098C9DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{40CD3A74-B0B6-4A37-AE65-5B203C38D0E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40CD3A74-B0B6-4A37-AE65-5B203C38D0E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40CD3A74-B0B6-4A37-AE65-5B203C38D0E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECF43B73-5A46-4310-8B11-FFF2B098C9DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF43B73-5A46-4310-8B11-FFF2B098C9DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF43B73-5A46-4310-8B11-FFF2B098C9DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECF43B73-5A46-4310-8B11-FFF2B098C9DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,6 +108,7 @@ Global
 		{3BAB87E1-79FD-45D1-8564-CAF87D4D16CA} = {80AA38A1-3E82-4B87-BB21-FDEDD2CC87E6}
 		{42BD3C80-3E57-4847-8142-84F6B682EA8D} = {C465393D-145E-4695-A7DB-AF55951BD533}
 		{40CD3A74-B0B6-4A37-AE65-5B203C38D0E2} = {80AA38A1-3E82-4B87-BB21-FDEDD2CC87E6}
+		{ECF43B73-5A46-4310-8B11-FFF2B098C9DF} = {80AA38A1-3E82-4B87-BB21-FDEDD2CC87E6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ABC12ED7-0EC8-4219-8A14-A058F7942D92}
