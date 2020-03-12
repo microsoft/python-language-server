@@ -48,3 +48,10 @@ f'{a:{{}}}'
 f'{(lambda x: x + 1)(1)}'
 
 f"{[1,2,1][1:]}"
+
+f'{x if x == 1.0 else 0}'
+f'{x if x != 1.0 else 0}'
+f'{x if x >= 1.0 else 0}'
+f'{x if x <= 1.0 else 0}'
+f'{x if x > 1.0 else 0}'
+f'{x if x < 1.0 else 0}'
