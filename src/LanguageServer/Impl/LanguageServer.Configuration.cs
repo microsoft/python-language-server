@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
-                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
+                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", false));
                 HandleDiagnosticsChanges(pythonSection, settings);
                 HandleCodeActionsChanges(pythonSection);
 
@@ -225,21 +225,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private const string DefaultCachingLevel = "None";
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            // TODO: Remove this one caching is working at any level again.
-            // https://github.com/microsoft/python-language-server/issues/1758
-            return AnalysisCachingLevel.None;
+            var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
 
-            // var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
-            // 
-            // if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
-            //     s = DefaultCachingLevel;
-            // }
-            // 
-            // if (s.EqualsIgnoreCase("System")) {
-            //     return AnalysisCachingLevel.System;
-            // }
-            // 
-            // return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
+            if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
+                s = DefaultCachingLevel;
+            }
+
+            if (s.EqualsIgnoreCase("System")) {
+                return AnalysisCachingLevel.System;
+            }
+
+            return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }
 }

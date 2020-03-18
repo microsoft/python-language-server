@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IMember Call(string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
 
-        public IPythonIterator GetIterator() => new EmptyIterator(DeclaringModule.Interpreter.UnknownType);
+        public IPythonIterator GetIterator() => new EmptyIterator(DeclaringModule);
 
         public IMember Index(IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
     }

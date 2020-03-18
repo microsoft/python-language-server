@@ -58,8 +58,7 @@ def func():
 
 c = C()
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            var model = await GetModelAsync(code);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -107,6 +106,7 @@ else:
                 .Which.Should().HaveParameters(is3x ? new[] { "a", "b", "c" } : new[] { "a" });
 
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            model.FilePath = null;
             var json = ToJson(model);
             Baseline.CompareToFile(GetBaselineFileNameWithSuffix(is3x ? "3" : "2"), json);
         }
@@ -135,8 +135,6 @@ c = C()
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-            //var json = ToJson(model);
-            //Baseline.CompareToFile(BaselineFileName, json);
 
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);

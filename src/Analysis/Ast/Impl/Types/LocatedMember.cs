@@ -89,16 +89,18 @@ namespace Microsoft.Python.Analysis.Types {
     }
 
     internal abstract class EmptyLocatedMember : ILocatedMember {
-        protected EmptyLocatedMember(PythonMemberType memberType) {
+        protected EmptyLocatedMember(IPythonModule declaringModule, PythonMemberType memberType) {
+            DeclaringModule = declaringModule;
             MemberType = memberType;
+            Location = new Location(DeclaringModule);
         }
 
         public PythonMemberType MemberType { get; }
-        public IPythonModule DeclaringModule => null;
+        public IPythonModule DeclaringModule { get; }
         public LocationInfo Definition => LocationInfo.Empty;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
         public void AddReference(Location location) { }
         public void RemoveReferences(IPythonModule module) { }
-        public Location Location { get; internal set; }
+        public Location Location { get; }
     }
 }

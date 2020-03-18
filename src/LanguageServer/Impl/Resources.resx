@@ -159,6 +159,9 @@
   <data name="RenameVariable_CannotRename" xml:space="preserve">
     <value>Cannot rename</value>
   </data>
+  <data name="UsingPythonFromPATH" xml:space="preserve">
+    <value>No interpreter specified, using Python from PATH.</value>
+  </data>
   <data name="WorkspaceRoot" xml:space="preserve">
     <value>Workspace root: {0}</value>
   </data>

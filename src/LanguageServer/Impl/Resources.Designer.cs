@@ -187,6 +187,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No interpreter specified, using Python from PATH..
+        /// </summary>
+        internal static string UsingPythonFromPATH {
+            get {
+                return ResourceManager.GetString("UsingPythonFromPATH", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Workspace root: {0}.
         /// </summary>
         internal static string WorkspaceRoot {

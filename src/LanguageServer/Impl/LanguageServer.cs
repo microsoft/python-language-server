@@ -311,7 +311,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task ClearAnalysisCache(CancellationToken cancellationToken) {
             using (_requestTimer.Time("python/clearAnalysisCache"))
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
-                Debug.Assert(_initialized);
+                // Debug.Assert(_initialized);
                 _server.ClearAnalysisCache();
             }
         }

@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private IPythonType _boolType;
 
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
-            : base(moduleName, ModuleType.Builtins, filePath, null, false, false, services) { } // TODO: builtins stub & persistence
+            : base(moduleName, ModuleType.Builtins, filePath, null, false, services) { } // TODO: builtins stub & persistence
 
         #region IMemberContainer
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
@@ -67,9 +67,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
             SpecializeFunctions();
-            foreach (var n in GetMemberNames()) {
-                GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
-            }
             base.OnAnalysisComplete();
         }
 

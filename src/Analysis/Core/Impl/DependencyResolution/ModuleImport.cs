@@ -27,7 +27,6 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         public bool IsCompiled { get; }
         public bool IsLibrary { get; }
         public bool IsBuiltin => IsCompiled && ModulePath == null;
-        public bool IsPersistent { get; set; }
 
         public ModuleImport(IImportChildrenSource childrenSource, string name, string fullName, string rootPath, string modulePath, long moduleFileSize, bool isCompiled, bool isLibrary) {
             _childrenSource = childrenSource;

@@ -17,7 +17,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -29,47 +29,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public OverloadModel[] Overloads { get; set; }
         public FunctionModel() { } // For de-serializer from JSON
 
-        [NonSerialized] private PythonFunctionType _function;
-
-        public FunctionModel(IPythonFunctionType func) : base(func) {
-            Overloads = func.Overloads.Select(FromOverload).ToArray();
+        public FunctionModel(IPythonFunctionType func, IServiceContainer services) : base(func, services) {
+            Overloads = func.Overloads.Select(s => FromOverload(s, services)).ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
-            => _function ?? (_function = new PythonFunctionType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, Documentation));
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            // Create inner functions and classes first since function may be returning one of them.
-            var all = Classes.Concat<MemberModel>(Functions).ToArray();
-
-            foreach (var model in all) {
-                _function.AddMember(Name, model.Create(mf, _function, gs), overwrite: true);
-            }
-            foreach (var model in all) {
-                model.Populate(mf, _function, gs);
-            }
-
-            foreach (var om in Overloads) {
-                var o = new PythonFunctionOverload(_function, new Location(mf.Module, IndexSpan.ToSpan()));
-                o.SetDocumentation(Documentation);
-                o.SetReturnValue(mf.ConstructMember(om.ReturnType), true);
-                o.SetParameters(om.Parameters.Select(p => ConstructParameter(mf, p)).ToArray());
-                _function.AddOverload(o);
-            }
-        }
-
-        private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
-            => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
-
-        private static OverloadModel FromOverload(IPythonFunctionOverload o)
+        private static OverloadModel FromOverload(IPythonFunctionOverload o, IServiceContainer services)
             => new OverloadModel {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
-                    Type = p.Type.GetPersistentQualifiedName(),
+                    Type = p.Type.GetPersistentQualifiedName(services),
                     Kind = p.Kind,
-                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(),
+                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(services),
                 }).ToArray(),
-                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName()
+                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName(services),
+                Documentation = o.Documentation
             };
     }
 }

@@ -17,151 +17,117 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching.IO;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private readonly ConcurrentDictionary<string, IDependencyProvider> _dependencies = new ConcurrentDictionary<string, IDependencyProvider>();
+    internal sealed class ModuleDatabase : IModuleDatabaseService, IDisposable {
+        private readonly object _modulesLock = new object();
+        private readonly Dictionary<string, PythonDbModule> _modulesCache
+            = new Dictionary<string, PythonDbModule>();
+
+        private readonly ConcurrentDictionary<string, ModuleModel> _modelsCache
+            = new ConcurrentDictionary<string, ModuleModel>();
+
+        private readonly ConcurrentDictionary<AnalysisModuleKey, bool> _searchResults
+            = new ConcurrentDictionary<AnalysisModuleKey, bool>();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
+        private readonly AnalysisCachingLevel _defaultCachingLevel;
+        private readonly CacheWriter _cacheWriter;
+        private AnalysisCachingLevel? _cachingLevel;
 
-        public ModuleDatabase(IServiceContainer services) {
-            _services = services;
-            _log = services.GetService<ILogger>();
-            _fs = services.GetService<IFileSystem>();
-
-            var cfs = services.GetService<ICacheFolderService>();
-            CacheFolder = Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
+        public ModuleDatabase(IServiceManager sm, string cacheFolder = null) {
+            _services = sm;
+            _log = _services.GetService<ILogger>();
+            _fs = _services.GetService<IFileSystem>();
+            _defaultCachingLevel = AnalysisCachingLevel.Library;
+            var cfs = _services.GetService<ICacheFolderService>();
+            CacheFolder = cacheFolder ?? Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
+            _cacheWriter = new CacheWriter(_services.GetService<IPythonAnalyzer>(), _fs, _log, CacheFolder);
+            sm.AddService(this);
         }
 
         public string CacheFolderBaseName => "analysis.v";
-        public int DatabaseFormatVersion => 4;
+        public int DatabaseFormatVersion => 5;
         public string CacheFolder { get; }
-
-        /// <summary>
-        /// Retrieves dependencies from the module persistent state.
-        /// </summary>
-        /// <param name="module">Python module to restore analysis for.</param>
-        /// <param name="dp">Python module dependency provider.</param>
-        public bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp) {
-            dp = null;
-
-            if (GetCachingLevel() == AnalysisCachingLevel.None || !module.ModuleType.CanBeCached()) {
-                return false;
-            }
-
-            if (_dependencies.TryGetValue(module.Name, out dp)) {
-                return true;
-            }
-
-            if (FindModuleModel(module.Name, module.FilePath, module.ModuleType, out var model)) {
-                dp = new DependencyProvider(module, model);
-                _dependencies[module.Name] = dp;
-                return true;
-            }
-            return false;
-        }
 
         /// <summary>
         /// Creates global scope from module persistent state.
         /// Global scope is then can be used to construct module analysis.
         /// </summary>
-        /// <param name="module">Python module to restore analysis for.</param>
-        /// <param name="gs">Python module global scope.</param>
-        public bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs) {
-            gs = null;
-
-            if (GetCachingLevel() == AnalysisCachingLevel.None || !module.ModuleType.CanBeCached()) {
-                return false;
+        public IPythonModule RestoreModule(string moduleName, string modulePath, ModuleType moduleType) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None) {
+                return null;
             }
-
-            if (FindModuleModel(module.Name, module.FilePath, module.ModuleType, out var model)) {
-                gs = new RestoredGlobalScope(model, module);
-            }
-
-            return gs != null;
+            return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)
+                ? RestoreModule(model) : null;
         }
-
-        /// <summary>
-        /// Writes module data to the database.
-        /// </summary>
-        public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
-            => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
-        public bool ModuleExistsInStorage(string moduleName, string filePath, ModuleType moduleType) {
+        public bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType) {
             if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return false;
             }
 
-            for (var retries = 50; retries > 0; --retries) {
-                try {
-                    var dbPath = FindDatabaseFile(moduleName, filePath, moduleType);
-                    return !string.IsNullOrEmpty(dbPath);
-                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                    Thread.Sleep(10);
-                }
+            var key = new AnalysisModuleKey(name, filePath);
+            if (_searchResults.TryGetValue(key, out var result)) {
+                return result;
             }
+
+            WithRetries.Execute(() => {
+                var dbPath = FindDatabaseFile(name, filePath, moduleType);
+                _searchResults[key] = result = !string.IsNullOrEmpty(dbPath);
+                return result;
+            }, "Unable to find database file for {name}.", _log);
             return false;
         }
 
-        private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
+        public async Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default) {
             var cachingLevel = GetCachingLevel();
             if (cachingLevel == AnalysisCachingLevel.None) {
                 return;
             }
 
-            var model = ModuleModel.FromAnalysis(analysis, _services, cachingLevel);
-            if (model == null) {
-                // Caching level setting does not permit this module to be persisted.
-                return;
+            var model = await Task.Run(() => ModuleModel.FromAnalysis(analysis, _services, cachingLevel), cancellationToken);
+            if (model != null && !cancellationToken.IsCancellationRequested) {
+                await _cacheWriter.EnqueueModel(model, immediate, cancellationToken);
             }
+        }
 
-            Exception ex = null;
-            for (var retries = 50; retries > 0; --retries) {
-                cancellationToken.ThrowIfCancellationRequested();
-                try {
-                    if (!_fs.DirectoryExists(CacheFolder)) {
-                        _fs.CreateDirectory(CacheFolder);
-                    }
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                    using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                        var modules = db.GetCollection<ModuleModel>("modules");
-                        modules.Upsert(model);
-                        return;
-                    }
-                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                    ex = ex1;
-                    Thread.Sleep(10);
-                } catch (Exception ex2) {
-                    ex = ex2;
-                    break;
+        internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
+            lock (_modulesLock) {
+                if (_modulesCache.TryGetValue(uniqueId, out var m)) {
+                    return m;
                 }
             }
+            return FindModuleModelById(moduleName, uniqueId, out var model) ? RestoreModule(model) : null;
+        }
 
-            if (ex != null) {
-                _log?.Log(System.Diagnostics.TraceEventType.Warning, $"Unable to write analysis of {model.Name} to database. Exception {ex.Message}");
-                if (ex.IsCriticalException()) {
-                    throw ex;
+        private IPythonModule RestoreModule(ModuleModel model) {
+            PythonDbModule dbModule;
+            lock (_modulesLock) {
+                if (_modulesCache.TryGetValue(model.UniqueId, out var m)) {
+                    return m;
                 }
+                dbModule = _modulesCache[model.UniqueId] = new PythonDbModule(model, model.FilePath, _services);
             }
+            dbModule.Construct(model);
+            return dbModule;
         }
 
         /// <summary>
@@ -170,12 +136,11 @@ namespace Microsoft.Python.Analysis.Caching {
         /// module content (typically file sizes).
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath, ModuleType moduleType) {
-            var interpreter = _services.GetService<IPythonInterpreter>();
             var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, moduleType, _services, GetCachingLevel());
-            if (string.IsNullOrEmpty(uniqueId)) {
-                return null;
-            }
+            return string.IsNullOrEmpty(uniqueId) ? null : FindDatabaseFile(uniqueId);
+        }
 
+        private string FindDatabaseFile(string uniqueId) {
             // Try module name as is.
             var dbPath = Path.Combine(CacheFolder, $"{uniqueId}.db");
             if (_fs.FileExists(dbPath)) {
@@ -184,6 +149,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             // TODO: resolving to a different version can be an option
             // Try with the major.minor Python version.
+            var interpreter = _services.GetService<IPythonInterpreter>();
             var pythonVersion = interpreter.Configuration.Version;
 
             dbPath = Path.Combine(CacheFolder, $"{uniqueId}({pythonVersion.Major}.{pythonVersion.Minor}).db");
@@ -196,48 +162,40 @@ namespace Microsoft.Python.Analysis.Caching {
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 
-        private bool FindModuleModel(string moduleName, string filePath, ModuleType moduleType, out ModuleModel model) {
+        private bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model)
+            => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, modulePath, moduleType), out model);
+
+        private bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
+            => TryGetModuleModel(moduleName, FindDatabaseFile(uniqueId), out model);
+
+        private bool TryGetModuleModel(string moduleName, string dbPath, out ModuleModel model) {
             model = null;
 
-            // We don't cache results here. Module resolution service decides when to call in here
-            // and it is responsible of overall management of the loaded Python modules.
-            for (var retries = 50; retries > 0; --retries) {
-                try {
-                    // TODO: make combined db rather than per module?
-                    var dbPath = FindDatabaseFile(moduleName, filePath, moduleType);
-                    if (string.IsNullOrEmpty(dbPath)) {
-                        return false;
-                    }
+            if (string.IsNullOrEmpty(dbPath)) {
+                return false;
+            }
 
-                    using (var db = new LiteDatabase(dbPath)) {
-                        if (!db.CollectionExists("modules")) {
-                            return false;
-                        }
+            if (_modelsCache.TryGetValue(moduleName, out model)) {
+                return true;
+            }
 
-                        var modules = db.GetCollection<ModuleModel>("modules");
-                        model = modules.Find(m => m.Name == moduleName).FirstOrDefault();
-                        return model != null;
-                    }
-                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                    Thread.Sleep(10);
+            model = WithRetries.Execute(() => {
+                using (var db = new LiteDatabase(dbPath)) {
+                    var modules = db.GetCollection<ModuleModel>("modules");
+                    var storedModel = modules.FindOne(m => m.Name == moduleName);
+                    _modelsCache[moduleName] = storedModel;
+                    return storedModel;
                 }
-            }
-            return false;
+            }, $"Unable to locate database for module {moduleName}.", _log);
+
+            return model != null;
         }
+
         private AnalysisCachingLevel GetCachingLevel()
-            => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? AnalysisCachingLevel.None;
+            => _cachingLevel
+               ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
+               ?? _defaultCachingLevel;
 
-        private sealed class DependencyProvider : IDependencyProvider {
-            private readonly ISet<AnalysisModuleKey> _dependencies;
-
-            public DependencyProvider(IPythonModule module, ModuleModel model) {
-                var dc = new DependencyCollector(module);
-                dc.AddImports(model.Imports);
-                dc.AddFromImports(model.FromImports);
-                _dependencies = dc.Dependencies;
-            }
-
-            public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
-        }
+        public void Dispose() => _cacheWriter.Dispose();
     }
 }

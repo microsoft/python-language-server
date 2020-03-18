@@ -14,9 +14,13 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis.Modules {
-    public interface IModuleCache {
-        string GetCacheFilePath(string filePath);
-        string ReadCachedModule(string filePath);
-        void WriteCachedModule(string filePath, string code);
+    public enum ModuleState {
+        None,
+        Loading,
+        Loaded,
+        Parsing,
+        Parsed,
+        Analyzing,
+        Analyzed
     }
 }

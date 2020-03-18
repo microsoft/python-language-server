@@ -32,7 +32,6 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan DoubleOpen = new StringSpan("{{");
         private static readonly StringSpan DoubleClose = new StringSpan("}}");
         private static readonly StringSpan NotEqual = new StringSpan("!=");
-        private static readonly StringSpan EqualEqual = new StringSpan("==");
         private static readonly StringSpan BackslashN = new StringSpan("\\N");
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
@@ -136,7 +135,7 @@ namespace Microsoft.Python.Parsing {
                 _buffer.Clear();
             }
 
-            Debug.Assert(CurrentChar == '}' || CurrentChar == '!' || CurrentChar == ':' || (_langVersion >= PythonLanguageVersion.V38 && CurrentChar == '='));
+            Debug.Assert(CurrentChar == '}' || CurrentChar == '!' || CurrentChar == ':' || CurrentChar == '=');
 
             MaybeReadEqualSpecifier();
             var conversion = MaybeReadConversionChar();
@@ -232,10 +231,23 @@ namespace Microsoft.Python.Parsing {
 
             while (!EndOfFString) {
                 var ch = CurrentChar;
+                var appendExtra = false;
+
                 if (!quoteChar.HasValue && _nestedParens.Count == 0) {
                     switch (ch) {
-                        case '!' when !IsNext(NotEqual):
-                        case '=' when !IsNext(EqualEqual) && _langVersion >= PythonLanguageVersion.V38:
+                        case '=':
+                        case '!':
+                            if (!IsEqualsAfterNext) {
+                                return;
+                            }
+                            appendExtra = true;
+                            break;
+
+                        case '<':
+                        case '>':
+                            appendExtra = IsEqualsAfterNext;
+                            break;
+
                         case '}':
                         case ':':
                             return;
@@ -252,6 +264,10 @@ namespace Microsoft.Python.Parsing {
                     HandleInsideString(ref quoteChar, ref stringType);
                 } else {
                     HandleInnerExprOutsideString(ref quoteChar, ref stringType);
+                }
+
+                if (appendExtra) {
+                    _buffer.Append(NextChar());
                 }
             }
         }
@@ -484,5 +500,7 @@ namespace Microsoft.Python.Parsing {
                 return false;
             }
         }
+
+        private bool IsEqualsAfterNext => _position + 1 < _fString.Length && _fString[_position + 1] == '=';
     }
 }
