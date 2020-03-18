@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public string Name { get; }
         public string FilePath { get; }
         public bool IsTypeshed { get; }
-        public bool IsNonUserAsDocument { get; }
 
         public AnalysisModuleKey(IPythonModule module) : this(
             module.Name,
@@ -41,13 +40,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Name = name;
             FilePath = filePath;
             IsTypeshed = isTypeshed;
-            IsNonUserAsDocument = isNonUserAsDocument;
         }
 
         public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, true);
 
         public bool Equals(AnalysisModuleKey other)
-            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed && IsNonUserAsDocument == other.IsNonUserAsDocument;
+            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
 
         public override bool Equals(object obj) => obj is AnalysisModuleKey other && Equals(other);
 
@@ -56,7 +54,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var hashCode = Name != null ? Name.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
                 hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
-                hashCode = (hashCode * 397) ^ IsNonUserAsDocument.GetHashCode();
                 return hashCode;
             }
         }

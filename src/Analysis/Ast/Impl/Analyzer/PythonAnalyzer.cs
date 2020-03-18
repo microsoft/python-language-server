@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
-            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin, dependencies);
             lock (_syncObj) {
                 if (_version >= graphVersion) {
                     return;
