@@ -518,5 +518,30 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
+
+        public static string LookPath(IFileSystem fs, string exeName) {
+            var path = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrWhiteSpace(path)) {
+                return null;
+            }
+
+            foreach (var p in path.Split(Path.PathSeparator)) {
+                var x = Path.Combine(p, exeName);
+
+                if (IsWindows) {
+                    x += ".exe"; // TODO: other extensions?
+                }
+
+                if (!fs.FileExists(x)) {
+                    continue;
+                }
+
+                // TODO: check executable on non-Windows platforms.
+
+                return x;
+            }
+
+            return null;
+        }
     }
 }
