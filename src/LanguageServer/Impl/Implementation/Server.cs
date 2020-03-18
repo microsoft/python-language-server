@@ -303,36 +303,32 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private bool TryGetPythonVersion(string exePath, out Version version) {
-            var startInfo = new ProcessStartInfo {
-                FileName = exePath,
-                Arguments = "-c \"import sys; print('{}.{}.{}'.format(*sys.version_info))\"",
-                UseShellExecute = false,
-                ErrorDialog = false,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            var output = string.Empty;
-
             try {
-                using (var process = new Process()) {
-                    process.StartInfo = startInfo;
-                    process.ErrorDataReceived += (s, e) => { };
+                using var process = new Process {
+                    StartInfo = new ProcessStartInfo {
+                        FileName = exePath,
+                        Arguments = "-c \"import sys; print('{}.{}.{}'.format(*sys.version_info))\"",
+                        UseShellExecute = false,
+                        ErrorDialog = false,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = Encoding.UTF8,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    }
+                };
 
-                    process.Start();
-                    process.BeginErrorReadLine();
+                process.ErrorDataReceived += (s, e) => { };
+                process.Start();
+                process.BeginErrorReadLine();
 
-                    output = process.StandardOutput.ReadToEnd();
+                var output = process.StandardOutput.ReadToEnd();
 
-                    return Version.TryParse(output, out version);
-                }
-            } catch (Exception ex) when (!ex.IsCriticalException()) {
-                version = null;
-                return false;
-            }
+                return Version.TryParse(output, out version);
+            } catch (Exception ex) when (!ex.IsCriticalException()) { }
+
+            version = null;
+            return false;
         }
         #endregion
     }
