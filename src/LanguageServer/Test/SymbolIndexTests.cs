@@ -161,6 +161,23 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public async Task IndexWorkspaceSymbolsFuzzyAsync() {
+            const string code = @"class FXoo(object):
+    def foxo(self, x): ...";
+
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
+                index.Add(path, DocumentWithAst(code));
+
+                var symbols = await index.WorkspaceSymbolsAsync("foo", maxSymbols);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new FlatSymbol("FXoo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 11)),
+                    new FlatSymbol("foxo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 13), "FXoo"),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void MarkAsPendingWaitsForUpdates() {
             using (var index = MakeSymbolIndex()) {
                 var path = TestData.GetDefaultModulePath();

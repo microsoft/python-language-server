@@ -98,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 var sym = symAndPar.symbol;
                 return DecorateWithParentsName((sym.Children ?? Enumerable.Empty<HierarchicalSymbol>()).ToList(), sym.Name);
             });
-            return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
+            return treeSymbols.Where(sym => FuzzyMatch(query, sym.symbol.Name))
                               .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName, sym.symbol._existInAllVariable));
         }
 
@@ -113,6 +113,20 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void Dispose() {
             _disposables.TryDispose();
+        }
+
+        private bool FuzzyMatch(string pattern, string name) {
+            var patternPos = 0;
+            var namePos = 0;
+
+            while (patternPos < pattern.Length && namePos < name.Length) {
+                if (char.ToLowerInvariant(pattern[patternPos]) == char.ToLowerInvariant(name[namePos])) {
+                    patternPos++;
+                }
+                namePos++;
+            }
+
+            return patternPos == pattern.Length;
         }
     }
 }
