@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
@@ -97,6 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     referencesProvider = true,
                     workspaceSymbolProvider = true,
                     documentSymbolProvider = true,
+                    documentHighlightProvider = true,
                     renameProvider = true,
                     declarationProvider = true,
                     documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
@@ -138,10 +140,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
+            var interpeterPath = initializationOptions?.interpreter.properties?.InterpreterPath;
+            Version version = null;
+
+            if (!string.IsNullOrWhiteSpace(interpeterPath)) {
+                Version.TryParse(initializationOptions?.interpreter.properties?.Version, out version);
+            } else {
+                var fs = _services.GetService<IFileSystem>();
+                var exePath = PathUtils.LookPath(fs, "python");
+                if (exePath != null && TryGetPythonVersion(exePath, out version)) {
+                    _log?.Log(TraceEventType.Information, Resources.UsingPythonFromPATH);
+                    interpeterPath = exePath;
+                } else {
+                    interpeterPath = null;
+                }
+            }
 
             var configuration = new InterpreterConfiguration(
-                interpreterPath: initializationOptions?.interpreter.properties?.InterpreterPath,
+                interpreterPath: interpeterPath,
                 version: version
             );
             _services.AddService(new ModuleDatabase(_services));
@@ -285,6 +301,35 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
+        }
+
+        private bool TryGetPythonVersion(string exePath, out Version version) {
+            try {
+                using var process = new Process {
+                    StartInfo = new ProcessStartInfo {
+                        FileName = exePath,
+                        Arguments = "-c \"import sys; print('{}.{}.{}'.format(*sys.version_info))\"",
+                        UseShellExecute = false,
+                        ErrorDialog = false,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = Encoding.UTF8,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    }
+                };
+
+                process.ErrorDataReceived += (s, e) => { };
+                process.Start();
+                process.BeginErrorReadLine();
+
+                var output = process.StandardOutput.ReadToEnd();
+
+                return Version.TryParse(output, out version);
+            } catch (Exception ex) when (!ex.IsCriticalException()) { }
+
+            version = null;
+            return false;
         }
         #endregion
     }
