@@ -115,7 +115,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _disposables.TryDispose();
         }
 
-        private bool FuzzyMatch(string pattern, string name) {
+        private static bool FuzzyMatch(string pattern, string name) {
             var patternPos = 0;
             var namePos = 0;
 
