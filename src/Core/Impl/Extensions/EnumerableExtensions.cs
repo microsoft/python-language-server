@@ -166,5 +166,15 @@ namespace Microsoft.Python.Core {
                 reverseChildren.Clear();
             }
         }
+
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> selector) {
+            var seen = new HashSet<TKey>();
+
+            foreach (var item in source) {
+                if (seen.Add(selector(item))) {
+                    yield return item;
+                }
+            }
+        }
     }
 }
