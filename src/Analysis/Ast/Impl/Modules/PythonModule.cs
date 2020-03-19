@@ -152,7 +152,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public virtual IMember GetMember(string name) {
             var v = GlobalScope.Variables[name]?.Value;
-            if (v == null) {
+            if (v == null && (ModuleType == ModuleType.Package || ModuleType == ModuleType.User || ModuleType == ModuleType.Library)) {
                 var mres = Interpreter.ModuleResolution;
                 var result = mres.CurrentPathResolver.FindImports(FilePath, Enumerable.Repeat(name, 1), 0, false);
                 if (result is ModuleImport moduleImports) {
