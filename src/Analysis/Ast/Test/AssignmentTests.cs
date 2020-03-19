@@ -698,5 +698,15 @@ b = [(x := i) for i in a]
             var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task WalrusInWhile() {
+            const string code = @"
+while(x := 1):
+    y = x
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
     }
 }

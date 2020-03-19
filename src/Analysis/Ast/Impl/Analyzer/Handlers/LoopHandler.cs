@@ -45,6 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         public bool HandleWhile(WhileStatement node) {
+            node.Test?.Walk(Walker);
             node.Body?.Walk(Walker);
             node.ElseStatement?.Walk(Walker);
             return false;
