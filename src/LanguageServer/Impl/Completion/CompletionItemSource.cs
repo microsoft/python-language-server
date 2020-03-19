@@ -39,7 +39,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public CompletionItem CreateCompletionItem(string text, IMember member, IPythonType self = null, string label = null)
             => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, self, label);
 
-        public CompletionItemEx CreateCompletionItem(string text, CompletionItemKind kind, IMember member, IPythonType self = null, string label = null) {
+        private CompletionItemEx CreateCompletionItem(string text, CompletionItemKind kind, IMember member, IPythonType self = null, string label = null) {
             var t = member?.GetPythonType();
             var docFormat = _docSource.DocumentationFormat;
 
@@ -57,6 +57,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
                 documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self, true) : null,
+                commitCharacters = AllowBraceCompletion(kind) ? new[] { "(" } : null,
                 // Custom fields used by the LS extensions that may modify
                 // the completion list. Not passed to the client.
                 Member = member,
@@ -67,7 +68,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public static CompletionItemEx CreateCompletionItem(string text, CompletionItemKind kind)
             => new CompletionItemEx {
                 label = text, insertText = text, insertTextFormat = InsertTextFormat.PlainText,
-                sortText = char.IsLetter(text, 0) ? "1" : "2", kind = kind
+                sortText = char.IsLetter(text, 0) ? "1" : "2", kind = kind,
+                commitCharacters = IsFunctionKind(kind) ? new[] { "(" } : null
             };
 
         private static CompletionItemKind ToCompletionItemKind(PythonMemberType memberType) {
@@ -85,5 +87,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
             return CompletionItemKind.Text;
         }
+
+        private static bool IsFunctionKind(CompletionItemKind kind)
+            => kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method;
+        private bool AllowBraceCompletion(CompletionItemKind kind)
+            => !Options.addBrackets && IsFunctionKind(kind);
     }
 }
