@@ -124,28 +124,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        public override bool Walk(ImportStatement node) {
-            foreach (var (nameNode, nameString) in node.Names.Zip(node.AsNames, (name, asName) => asName != null ? (asName, asName.Name) : ((Node)name, name.MakeString()))) {
-                var span = nameNode.GetSpan(_ast);
-                _stack.AddSymbol(new HierarchicalSymbol(nameString, SymbolKind.Module, span, existInAllVariable: ExistInAllVariable(nameString)));
-            }
-
-            return false;
-        }
-
-        public override bool Walk(FromImportStatement node) {
-            if (node.IsFromFuture) {
-                return false;
-            }
-
-            foreach (var name in node.Names.Zip(node.AsNames, (name, asName) => asName ?? name)) {
-                var span = name.GetSpan(_ast);
-                _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span, existInAllVariable: ExistInAllVariable(name.Name)));
-            }
-
-            return false;
-        }
-
         public override bool Walk(AssignmentStatement node) {
             WalkIfNotLibraryMode(node.Right);
 

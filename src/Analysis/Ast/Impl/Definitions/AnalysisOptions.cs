@@ -37,13 +37,6 @@ namespace Microsoft.Python.Analysis {
         public bool LintingEnabled { get; set; }
 
         /// <summary>
-        /// Keep in memory information on local variables declared in
-        /// functions in libraries. Provides ability to navigate to
-        /// symbols used in function bodies in packages and libraries.
-        /// </summary>
-        public bool KeepLibraryLocalVariables { get; set; }
-
-        /// <summary>
         /// Keep in memory AST of library source code. May somewhat
         /// improve performance when library code has to be re-analyzed.
         /// </summary>

@@ -98,6 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     referencesProvider = true,
                     workspaceSymbolProvider = true,
                     documentSymbolProvider = true,
+                    documentHighlightProvider = true,
                     renameProvider = true,
                     declarationProvider = true,
                     documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {

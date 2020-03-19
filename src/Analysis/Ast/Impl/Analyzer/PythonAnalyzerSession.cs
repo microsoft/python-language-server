@@ -512,6 +512,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                                              node.IsValidVersion;
                 }
 
+                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                if (optionsProvider?.Options.KeepLibraryAst == true) {
+                    createLibraryAnalysis = false;
+                }
+
                 if (!createLibraryAnalysis) {
                     return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
                 }

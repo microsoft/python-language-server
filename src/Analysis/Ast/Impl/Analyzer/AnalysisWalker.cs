@@ -18,6 +18,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
@@ -61,6 +62,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
+        public override bool Walk(CallExpression node) {
+            Eval.ProcessCallForReferences(node);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(DelStatement node) {
+            if (Module.ModuleType != ModuleType.User &&
+                Eval.Services.GetService<IAnalysisOptionsProvider>()?.Options.KeepLibraryAst != true) {
+                return;
+            }
+
+            var names = node.Expressions.OfType<NameExpression>()
+                .Concat(node.Expressions.OfType<TupleExpression>().SelectMany(t => t.Items.OfType<NameExpression>()))
+                .Where(x => !string.IsNullOrEmpty(x.Name));
+
+            foreach (var nex in names) {
+                Eval.LookupNameInScopes(nex.Name)?.AddReference(Eval.GetLocationOfName(nex));
+            }
+        }
+
         public override bool Walk(ExpressionStatement node) {
             switch (node.Expression) {
                 case ExpressionWithAnnotation ea:
@@ -69,9 +90,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case Comprehension comp:
                     Eval.ProcessComprehension(comp);
                     return false;
-                case CallExpression callex:
-                    Eval.ProcessCallForReferences(callex);
-                    return true;
                 default:
                     return base.Walk(node);
             }
