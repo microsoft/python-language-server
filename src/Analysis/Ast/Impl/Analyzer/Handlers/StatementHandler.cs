@@ -16,6 +16,7 @@
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
@@ -36,5 +37,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         protected StatementHandler(AnalysisWalker walker) {
             Walker = walker;
         }
+
+        protected void AssignVariable(NameExpression ne, IMember value) {
+            IScope scope;
+            if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
+                Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);
+                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                return;
+            }
+
+            if (Eval.CurrentScope.Globals[ne.Name] != null) {
+                Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
+                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                return;
+            }
+
+            var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
+            var location = Eval.GetLocationOfName(ne);
+            if (IsValidAssignment(ne.Name, location)) {
+                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, location);
+            }
+        }
+        private bool IsValidAssignment(string name, Location loc) => !Eval.GetInScope(name).IsDeclaredAfter(loc);
     }
 }

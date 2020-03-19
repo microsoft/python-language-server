@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
@@ -494,6 +493,23 @@ print(2)
 
             print.References[2].Span.Should().Be(3, 1, 3, 6);
             print.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GlobalInSequence() {
+            const string code = @"
+LINE_NO = 0
+
+def funky(filename):
+    global LINE_NO
+    with open(filename, 'r') as file_desc:
+        LINE_NO = 0
+        for line in file_desc:
+            other, LINE_NO = process(line)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var v = analysis.Should().HaveVariable("LINE_NO").Which;
+            v.Definition.StartLine.Should().Be(2);
         }
     }
 }
