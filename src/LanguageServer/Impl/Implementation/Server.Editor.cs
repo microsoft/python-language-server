@@ -108,6 +108,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new ReferenceSource(Services).FindAllReferencesAsync(uri, @params.position, ReferenceSearchOptions.All, cancellationToken);
         }
 
+        public Task<DocumentHighlight[]> DocumentHighlight(ReferencesParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Document highlight in {uri} at {@params.position}");
+            return new DocumentHighlightSource(Services).DocumentHighlightAsync(uri, @params.position, cancellationToken);
+        }
+
         public Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Rename in {uri} at {@params.position}");

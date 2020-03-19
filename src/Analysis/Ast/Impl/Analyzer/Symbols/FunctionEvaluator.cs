@@ -60,15 +60,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
                 // methods and properties.
+                var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
+                var keepAst = optionsProvider?.Options.KeepLibraryAst == true;
                 var ctor = _function.IsDunderInit() || _function.IsDunderNew();
-                if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User || keepAst) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
                     // For libraries remove declared local function variables to free up some memory
                     // unless function has inner classes or functions.
-                    var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
-                    if (Module.ModuleType != ModuleType.User &&
-                        optionsProvider?.Options.KeepLibraryLocalVariables != true &&
+                    if (Module.ModuleType != ModuleType.User && !keepAst &&
                         Eval.CurrentScope.Variables.All(
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
