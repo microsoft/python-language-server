@@ -389,7 +389,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         internal void ProcessCallForReferences(CallExpression callExpr, LookupOptions lookupOptions = LookupOptions.Normal) {
-            if (Module.ModuleType != ModuleType.User) {
+            if (Module.ModuleType != ModuleType.User && 
+                Services.GetService<IAnalysisOptionsProvider>()?.Options.KeepLibraryAst != true) {
                 return;
             }
 
