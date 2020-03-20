@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Microsoft.Python.Analysis.Caching.Tests</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis.Caching.Tests</AssemblyName>
   </PropertyGroup>
