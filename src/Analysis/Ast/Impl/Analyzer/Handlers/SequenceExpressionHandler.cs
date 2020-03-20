@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
@@ -24,26 +22,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SequenceExpressionHandler : StatementHandler {
         public SequenceExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(SequenceExpression seq, IMember value) {
-            Assign(seq, value, Eval);
+        public void HandleAssignment(SequenceExpression seq, IMember value) => Assign(seq, value);
+
+        private void Assign(SequenceExpression seq, IMember value) {
+            var typeEnum = new ValueEnumerator(value, Eval.UnknownType, Eval.Module);
+            Assign(seq, typeEnum);
         }
 
-        internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
-            var typeEnum = new ValueEnumerator(value, eval.UnknownType, eval.Module);
-            Assign(seq, typeEnum, eval);
-        }
-
-        private static void Assign(SequenceExpression seq, ValueEnumerator valueEnum, ExpressionEval eval) {
+        private void Assign(SequenceExpression seq, ValueEnumerator valueEnum) {
             foreach (var item in seq.Items) {
                 switch (item) {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
+                        AssignVariable(nex, valueEnum.Next());
                         break;
                     case ParenthesisExpression pex when pex.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
+                        AssignVariable(nex, valueEnum.Next());
                         break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
+                        AssignVariable(nex, valueEnum.Next());
                         break;
                     // Nested sequence expression in sequence, Tuple[Tuple[int, str], int], List[Tuple[int], str]
                     // TODO: Because of bug with how collection types are constructed, they don't make nested collection types
@@ -52,29 +48,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         var collection = valueEnum.Next();
                         var pc = collection as IPythonCollection;
                         var pct = collection as IPythonCollectionType;
-                        Assign(se, pc ?? pct.CreateInstance(ArgumentSet.Empty(se, eval)), eval);
+                        Assign(se, pc ?? pct.CreateInstance(ArgumentSet.Empty(se, Eval)));
                         break;
                     case SequenceExpression se:
-                        Assign(se, valueEnum, eval);
+                        Assign(se, valueEnum);
                         break;
                 }
             }
-        }
-
-        private static IEnumerable<NameExpression> NamesFromSequenceExpression(SequenceExpression rootSeq) {
-            var names = new List<NameExpression>();
-            foreach (var item in rootSeq.Items) {
-                var expr = item.RemoveParenthesis();
-                switch (expr) {
-                    case SequenceExpression seq:
-                        names.AddRange(NamesFromSequenceExpression(seq));
-                        break;
-                    case NameExpression nex:
-                        names.Add(nex);
-                        break;
-                }
-            }
-            return names;
         }
     }
 }

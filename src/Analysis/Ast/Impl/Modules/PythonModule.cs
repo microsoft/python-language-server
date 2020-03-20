@@ -24,7 +24,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -149,26 +148,9 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
 
-        public virtual IMember GetMember(string name) {
-            var v = GlobalScope.Variables[name]?.Value;
-            if (v == null && (ModuleType == ModuleType.Package || ModuleType == ModuleType.User || ModuleType == ModuleType.Library)) {
-                var mres = Interpreter.ModuleResolution;
-                var result = mres.CurrentPathResolver.FindImports(FilePath, Enumerable.Repeat(name, 1), 0, false);
-                if (result is ModuleImport moduleImports) {
-                    v = mres.GetImportedModule(moduleImports.FullName);
-                }
-            }
-            return v;
-        }
-
-        public virtual IEnumerable<string> GetMemberNames() {
-            var names = GlobalScope.GetExportableVariableNames();
-            // Get submodules since they may not be explicitly exported
-            // and yet are available. Consider 'pandas.io'.
-            var mi = Interpreter.ModuleResolution.CurrentPathResolver.GetModuleImportFromModuleName(Name);
-            return names.Concat(mi?.GetChildrenNames() ?? Enumerable.Empty<string>()).Distinct();
-        }
+        public virtual IEnumerable<string> GetMemberNames() => GlobalScope.GetExportableVariableNames();
 
         #endregion
 

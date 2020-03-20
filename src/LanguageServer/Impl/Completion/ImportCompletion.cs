@@ -194,7 +194,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                             break;
                     }
 
-                    if (name != null && !completions.Any(c => c.label == name && c.kind == CompletionItemKind.Module)) {
+                    if (name != null && !memberNames.Contains(name)) {
                         completions.Add(CompletionItemSource.CreateCompletionItem(name, CompletionItemKind.Module));
                     }
                 }
