@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             => (instance as IPythonCollection)?.Index(args) ?? UnknownType;
 
         public IPythonType CreateSpecificType(IArgumentSet typeArguments) {
-            throw new NotImplementedException();
+            return this;
         }
 
         #endregion
