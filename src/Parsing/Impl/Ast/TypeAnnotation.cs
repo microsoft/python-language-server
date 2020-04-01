@@ -27,9 +27,6 @@ namespace Microsoft.Python.Parsing.Ast {
             Expression = expr ?? throw new ArgumentNullException(nameof(expr));
         }
 
-        public static TypeAnnotation FromType<T>(TypeAnnotationConverter<T> converter, T type) where T : class
-            => throw new NotImplementedException();
-
         public PythonLanguageVersion LanguageVersion { get; }
         public Expression Expression { get; }
 
