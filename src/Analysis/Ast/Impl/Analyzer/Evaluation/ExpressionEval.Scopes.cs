@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -55,12 +54,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (member != null && !overwrite) {
                 return;
             }
-            
+
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, location);
                 return;
             }
-            
+
             if (member != null) {
                 if (!value.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, value, source, location);
@@ -191,10 +190,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // them better.
                 // TODO: figure out threading/locking for the Open/Close pairs.
                 // Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
-                if (_eval._openScopes.Count > 0) {
-                    _eval._openScopes.Pop();
+                try {
+                    if (_eval._openScopes.Count > 0) {
+                        _eval._openScopes.Pop();
+                    }
+                    _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
+                } catch (InvalidOperationException) {
+                    // Per comment above this can happen occasionally.
+                    // The catch is tactical fix to prevent crashes since complete handling of open/close
+                    // in threaded cases would be much larger change.
+                    _eval.Log?.Log(TraceEventType.Verbose, "Error: Mismatched open/close in scope tracker - scope stack is empty on Dispose()");
                 }
-                _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
             }
         }
     }
