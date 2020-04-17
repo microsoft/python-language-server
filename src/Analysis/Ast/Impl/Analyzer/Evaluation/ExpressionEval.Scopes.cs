@@ -199,6 +199,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Per comment above this can happen occasionally.
                     // The catch is tactical fix to prevent crashes since complete handling of open/close
                     // in threaded cases would be much larger change.
+                    _eval.Log?.Log(TraceEventType.Verbose, "Error: Mismatched open/close in scope tracker - scope stack is empty on Dispose()");
                 }
             }
         }
