@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -84,7 +83,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             break;
                         }
                     }
-
                     break;
                 case LookupOptions.Global:
                 case LookupOptions.Global | LookupOptions.Builtins:
@@ -92,7 +90,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (GlobalScope.Variables.Contains(name)) {
                         scope = GlobalScope;
                     }
-
                     break;
                 case LookupOptions.Nonlocal:
                 case LookupOptions.Nonlocal | LookupOptions.Builtins:
@@ -103,7 +100,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             break;
                         }
                     }
-
                     break;
                 case LookupOptions.Local:
                 case LookupOptions.Local | LookupOptions.Builtins:
@@ -111,7 +107,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (CurrentScope.Variables.Contains(name)) {
                         scope = CurrentScope;
                     }
-
                     break;
                 default:
                     Debug.Fail("Unsupported name lookup combination");
@@ -178,7 +173,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 _openScopes.Push(scope);
                 CurrentScope = scope;
             }
-
             return new ScopeTracker(this);
         }
 
