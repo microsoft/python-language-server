@@ -55,12 +55,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (member != null && !overwrite) {
                 return;
             }
-            
+
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, location);
                 return;
             }
-            
+
             if (member != null) {
                 if (!value.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, value, source, location);
@@ -84,6 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             break;
                         }
                     }
+
                     break;
                 case LookupOptions.Global:
                 case LookupOptions.Global | LookupOptions.Builtins:
@@ -91,6 +92,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (GlobalScope.Variables.Contains(name)) {
                         scope = GlobalScope;
                     }
+
                     break;
                 case LookupOptions.Nonlocal:
                 case LookupOptions.Nonlocal | LookupOptions.Builtins:
@@ -101,6 +103,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             break;
                         }
                     }
+
                     break;
                 case LookupOptions.Local:
                 case LookupOptions.Local | LookupOptions.Builtins:
@@ -108,6 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (CurrentScope.Variables.Contains(name)) {
                         scope = CurrentScope;
                     }
+
                     break;
                 default:
                     Debug.Fail("Unsupported name lookup combination");
@@ -174,6 +178,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 _openScopes.Push(scope);
                 CurrentScope = scope;
             }
+
             return new ScopeTracker(this);
         }
 
@@ -191,10 +196,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // them better.
                 // TODO: figure out threading/locking for the Open/Close pairs.
                 // Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
-                if (_eval._openScopes.Count > 0) {
-                    _eval._openScopes.Pop();
+                try {
+                    if (_eval._openScopes.Count > 0) {
+                        _eval._openScopes.Pop();
+                    }
+                    _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
+                } catch (Exception ex) when (!ex.IsCriticalException()) {
+                    // Per comment above this can happen occasionally.
+                    // The catch is tactical fix to prevent crashes since complete handling of open/close
+                    // in threaded cases would be much larger change.
                 }
-                _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
             }
         }
     }
