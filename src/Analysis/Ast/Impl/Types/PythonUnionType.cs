@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Check if any types support indexing
             var result = types
                     .Select(t => t.Index(instance, args))
-                    .FirstOrDefault(r => !r.IsUnknown() && r.GetPythonType() != this);
+                    .FirstOrDefault(r => !r.IsUnknown() && !r.GetPythonType().Equals(this));
             return result ?? DeclaringModule.Interpreter.UnknownType;
         }
 
@@ -162,5 +162,16 @@ namespace Microsoft.Python.Analysis.Types {
 
             return utx == null ? uty.Add(x) : utx.Add(uty);
         }
+
+        public override bool Equals(object obj) {
+            if (obj is PythonUnionType u) {
+                lock (_lock) {
+                    return _types.SetEquals(u._types);
+                }
+            }
+            return false;
+        }
+
+        public override int GetHashCode() => 0;
     }
 }

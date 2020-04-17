@@ -387,6 +387,34 @@ a, b, c = y
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnionsCompare() {
+            var analysis = await GetAnalysisAsync("from typing import Union", PythonVersions.LatestAvailable3X);
+            var i = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+            var b = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+
+            var expected = new[] {i, b};
+            var u1 = new PythonUnionType(expected, analysis.Document);
+            var u2 = new PythonUnionType(expected, analysis.Document);
+
+            u2.Equals(u1).Should().BeTrue();
+            u1.Add(u2);
+            var actual = u1.ToArray();
+            actual.Should().Equal(expected);
+
+            u1.Add(u1);
+            actual = u1.ToArray();
+            actual.Should().Equal(expected);
+
+            u2.Add(u1);
+            actual = u2.ToArray();
+            actual.Should().Equal(expected);
+
+            u2.Add(u2);
+            actual = u1.ToArray();
+            actual.Should().Equal(expected);
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationConversion() {
             AssertConvert("List");
             AssertConvert("List[Int]");
