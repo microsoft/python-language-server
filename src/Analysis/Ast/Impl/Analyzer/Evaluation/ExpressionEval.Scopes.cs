@@ -195,7 +195,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         _eval._openScopes.Pop();
                     }
                     _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
-                } catch (Exception ex) when (!ex.IsCriticalException()) {
+                } catch (InvalidOperationException) {
                     // Per comment above this can happen occasionally.
                     // The catch is tactical fix to prevent crashes since complete handling of open/close
                     // in threaded cases would be much larger change.
