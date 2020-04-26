@@ -36,8 +36,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var stubs = Path.Combine(asmLocation, "Stubs");
             var typeshedRoot = Root ?? Path.Combine(asmLocation, "Typeshed");
             
-            _typeStubPaths = GetTypeShedPaths(Root)
-                .Concat(GetTypeShedPaths(typeshedRoot))
+            _typeStubPaths = GetTypeShedPaths(typeshedRoot)
                 .Concat(GetTypeShedPaths(stubs))
                 .Where(services.GetService<IFileSystem>().DirectoryExists)
                 .ToImmutableArray();
