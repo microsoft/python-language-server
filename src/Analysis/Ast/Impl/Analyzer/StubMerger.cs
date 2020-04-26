@@ -149,6 +149,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     MergeMembers(v, sourceFunction, stubType, cancellationToken);
                     break;
 
+                case PythonPropertyType sourceProperty:
+                    MergeMembers(v, sourceProperty, stubType, cancellationToken);
+                    break;
+
                 case IPythonModule _:
                     // We do not re-declare modules.
                     break;
@@ -203,7 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; // Do not add unknowns to the stub.
                 }
                 var sourceMemberType = sourceMember?.GetPythonType();
-                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceType) {
+                if (sourceMemberType is IPythonClassMember cm && !cm.DeclaringModule.Equals(sourceType.DeclaringModule)) {
                     continue; // Only take members from this class and not from bases.
                 }
                 if (!IsFromThisModuleOrSubmodules(sourceMemberType)) {

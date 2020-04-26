@@ -32,8 +32,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public TypeshedResolution(string root, IServiceContainer services) : base(root, services) {
             // TODO: merge with user-provided stub paths
-            var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
+            var asmLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var stubs = Path.Combine(asmLocation, "Stubs");
+            var typeshed = Path.Combine(asmLocation, "Typeshed");
+            
             _typeStubPaths = GetTypeShedPaths(Root)
+                .Concat(GetTypeShedPaths(typeshed))
                 .Concat(GetTypeShedPaths(stubs))
                 .Where(services.GetService<IFileSystem>().DirectoryExists)
                 .ToImmutableArray();
