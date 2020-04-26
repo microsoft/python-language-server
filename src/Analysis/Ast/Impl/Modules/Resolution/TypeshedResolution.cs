@@ -34,10 +34,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             // TODO: merge with user-provided stub paths
             var asmLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var stubs = Path.Combine(asmLocation, "Stubs");
-            var typeshed = Path.Combine(asmLocation, "Typeshed");
+            var typeshedRoot = Root ?? Path.Combine(asmLocation, "Typeshed");
             
             _typeStubPaths = GetTypeShedPaths(Root)
-                .Concat(GetTypeShedPaths(typeshed))
+                .Concat(GetTypeShedPaths(typeshedRoot))
                 .Concat(GetTypeShedPaths(stubs))
                 .Where(services.GetService<IFileSystem>().DirectoryExists)
                 .ToImmutableArray();
