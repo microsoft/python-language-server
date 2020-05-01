@@ -128,7 +128,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // if there are multiple functions with same name exist, only the very first one will be
                 // maintained in the scope. we should improve this if possible.
                 // https://github.com/microsoft/python-language-server/issues/1693
-                _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration, _eval.GetLocationOfName(fd));
+                _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration);
                 _typeMap[fd] = f;
                 declaringType?.AddMember(f.Name, f, overwrite: true);
             }
