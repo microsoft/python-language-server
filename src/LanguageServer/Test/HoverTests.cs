@@ -284,6 +284,18 @@ class A:
             AssertHover(hs, analysis, new SourceLocation(4, 7), @"x: int", new SourceSpan(4, 7, 4, 8));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task CompiledCode() {
+            const string code = @"
+import os
+os.mkdir()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            var hover = hs.GetHover(analysis, new SourceLocation(3, 6));
+            hover.contents.value.Should().Contain("Create a directory");
+        }
+
         private static void AssertNoHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position) {
             var hover = hs.GetHover(analysis, position);
             hover.Should().BeNull();
