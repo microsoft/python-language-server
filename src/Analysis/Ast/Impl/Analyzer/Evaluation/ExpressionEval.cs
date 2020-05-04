@@ -78,7 +78,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
-            if (node == null || Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library) {
+            if (node == null || 
+                Module.ModuleType == ModuleType.Specialized || Module.ModuleType == ModuleType.Compiled || 
+                Module.ModuleType == ModuleType.CompiledBuiltin || Module.ModuleType == ModuleType.Builtins) {
                 return DefaultLocation;
             }
 

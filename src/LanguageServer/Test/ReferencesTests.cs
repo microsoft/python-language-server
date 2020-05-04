@@ -435,5 +435,54 @@ logging.getLogger()
             var references = await rs.FindAllReferencesAsync(null, new SourceLocation(1, 1), ReferenceSearchOptions.All);
             references.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task DelStatement1() {
+            const string code = @"
+def func(a, b):
+    return a+b
+
+del func
+";
+            var analysis = await GetAnalysisAsync(code);
+            var rs = new ReferenceSource(Services);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(5, 6), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(2);
+            refs[0].range.Should().Be(1, 4, 1, 8);
+            refs[0].uri.Should().Be(analysis.Document.Uri);
+            refs[1].range.Should().Be(4, 4, 4, 8);
+            refs[1].uri.Should().Be(analysis.Document.Uri);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DelStatement2() {
+            const string code = @"
+def func1(a, b):
+    return a+b
+
+def func2(a, b):
+    return a+b
+
+del (func1, func2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var rs = new ReferenceSource(Services);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(8, 6), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(2);
+            refs[0].range.Should().Be(1, 4, 1, 9);
+            refs[0].uri.Should().Be(analysis.Document.Uri);
+            refs[1].range.Should().Be(7, 5, 7, 10);
+            refs[1].uri.Should().Be(analysis.Document.Uri);
+
+            refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(8, 14), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(2);
+            refs[0].range.Should().Be(4, 4, 4, 9);
+            refs[0].uri.Should().Be(analysis.Document.Uri);
+            refs[1].range.Should().Be(7, 12, 7, 17);
+            refs[1].uri.Should().Be(analysis.Document.Uri);
+        }
     }
 }

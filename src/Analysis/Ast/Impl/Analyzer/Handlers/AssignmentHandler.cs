@@ -97,34 +97,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     HandleAnnotatedExpression(annExpr, value);
                     break;
                 case NameExpression nameExpr:
-                    HandleNameExpression(nameExpr, value);
+                    AssignVariable(nameExpr, value);
                     break;
                 case MemberExpression memberExpr:
                     TryHandleClassVariable(memberExpr, value);
                     break;
-            }
-        }
-
-        private bool IsValidAssignment(string name, Location loc) => !Eval.GetInScope(name).IsDeclaredAfter(loc);
-
-        private void HandleNameExpression(NameExpression ne, IMember value) {
-            IScope scope;
-            if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
-                Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);
-                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                return;
-            }
-
-            if (Eval.CurrentScope.Globals[ne.Name] != null) {
-                Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
-                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                return;
-            }
-
-            var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-            var location = Eval.GetLocationOfName(ne);
-            if (IsValidAssignment(ne.Name, location)) {
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, location);
             }
         }
 

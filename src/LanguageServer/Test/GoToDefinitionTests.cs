@@ -710,5 +710,31 @@ from nonexistent import some
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 26), out _);
             reference.Should().BeNull();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task LocalParameter() {
+            const string code = @"
+def func(a, b):
+    return a+b
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource(Services);
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 12), out _);
+            reference.range.Should().Be(1, 9, 1, 10);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CompiledCode() {
+            const string code = @"
+import os
+os.mkdir()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource(Services);
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 6), out _);
+            reference.range.start.line.Should().NotBe(1);
+            reference.range.end.line.Should().NotBe(1);
+            reference.uri.AbsolutePath.Should().Contain(".pyi");
+        }
     }
 }

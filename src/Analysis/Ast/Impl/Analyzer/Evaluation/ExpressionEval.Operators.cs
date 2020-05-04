@@ -68,10 +68,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (expr is OrExpression orexp) {
                 // Consider 'self.__params = types.MappingProxyType(params or {})'
                 var leftSide = GetValueFromExpression(orexp.Left, lookupOptions);
+                // Do evaluate both sides in order to correctly track references
+                var rightSide = GetValueFromExpression(orexp.Right, lookupOptions);
                 if (!leftSide.IsUnknown()) {
                     return leftSide;
                 }
-                var rightSide = GetValueFromExpression(orexp.Right, lookupOptions);
                 return rightSide.IsUnknown() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : rightSide;
             }
 

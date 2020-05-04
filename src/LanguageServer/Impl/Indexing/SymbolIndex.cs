@@ -91,28 +91,39 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string path, string query,
-            IReadOnlyList<HierarchicalSymbol> symbols) {
-            var rootSymbols = DecorateWithParentsName(symbols, null);
-            var treeSymbols = rootSymbols.TraverseBreadthFirst((symAndPar) => {
-                var sym = symAndPar.symbol;
-                return DecorateWithParentsName((sym.Children ?? Enumerable.Empty<HierarchicalSymbol>()).ToList(), sym.Name);
-            });
-            return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
-                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName, sym.symbol._existInAllVariable));
+        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string path, string query, IReadOnlyList<HierarchicalSymbol> symbols) {
+            var treeSymbols = DecorateWithParentsName(symbols, null)
+                .TraverseBreadthFirst(sym => DecorateWithParentsName(sym.symbol.Children ?? Enumerable.Empty<HierarchicalSymbol>(), sym.symbol.Name));
+
+            // Prioritize exact matches, then substrings, then fuzzy matches. The caller is in charge of limiting this.
+            return treeSymbols.Where(sym => sym.symbol.Name.EqualsIgnoreCase(query))
+                .Concat(treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, true)))
+                .Concat(treeSymbols.Where(sym => FuzzyMatch(query, sym.symbol.Name)))
+                .DistinctBy(sym => sym.symbol) // Deduplicate by reference; we're iterating over the exact same objects.
+                .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName, sym.symbol._existInAllVariable));
         }
 
-        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
-            IEnumerable<HierarchicalSymbol> symbols, string parentName) {
-            return symbols.Select((symbol) => (symbol, parentName)).ToList();
-        }
-
-        private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _indexParser, _libraryMode);
-        }
+        private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) => new MostRecentDocumentSymbols(path, _indexParser, _libraryMode);
 
         public void Dispose() {
             _disposables.TryDispose();
+        }
+
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName)
+            => symbols.Select((symbol) => (symbol, parentName));
+
+        private static bool FuzzyMatch(string pattern, string name) {
+            var patternPos = 0;
+            var namePos = 0;
+
+            while (patternPos < pattern.Length && namePos < name.Length) {
+                if (char.ToLowerInvariant(pattern[patternPos]) == char.ToLowerInvariant(name[namePos])) {
+                    patternPos++;
+                }
+                namePos++;
+            }
+
+            return patternPos == pattern.Length;
         }
     }
 }

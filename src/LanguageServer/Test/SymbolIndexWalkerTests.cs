@@ -196,14 +196,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
 ";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("sys", SymbolKind.Module, new SourceSpan(1, 8, 1, 11)),
-                new HierarchicalSymbol("np", SymbolKind.Module, new SourceSpan(2, 17, 2, 19)),
-                new HierarchicalSymbol("osjoin", SymbolKind.Module, new SourceSpan(3, 29, 3, 35)),
-                new HierarchicalSymbol("osjoin2", SymbolKind.Module, new SourceSpan(4, 31, 4, 38)),
-                new HierarchicalSymbol("osexists", SymbolKind.Module, new SourceSpan(4, 50, 4, 58)),
-                new HierarchicalSymbol("expanduser", SymbolKind.Module, new SourceSpan(4, 60, 4, 70)),
-            });
+            symbols.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]

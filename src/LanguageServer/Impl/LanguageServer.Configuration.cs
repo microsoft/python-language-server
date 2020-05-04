@@ -115,7 +115,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void HandleDiagnosticsChanges(JToken pythonSection, LanguageServerSettings settings) {
             var analysis = pythonSection["analysis"];
 
-            settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
+            settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 200);
             var ds = _services.GetService<IDiagnosticsService>();
             ds.PublishingDelay = settings.diagnosticPublishDelay;
 
@@ -130,7 +130,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var memory = analysis["memory"];
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
             optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
             optionsProvider.Options.StubOnlyAnalysis = GetSetting(analysis, "stubsOnly", true);

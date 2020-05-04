@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
@@ -209,7 +210,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             // Import A as B
-            var asName = statement.AsNames.FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
+            var asName = statement.AsNames.ExcludeDefault().FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
             if (asName != null) {
                 var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
                 if (!value.IsUnknown()) {
@@ -264,8 +265,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope, LookupOptions.All);
-            var v = scope?.Variables[name];
-            if (m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins || v.IsUnknown()) {
+            if(m == null || scope == null || scope.Module.ModuleType == ModuleType.Builtins) {
+                return null;
+            }
+
+            var v = scope.Variables[name];
+            if (v == null || (v.Source == VariableSource.Import && v.IsUnknown())) {
                 return null;
             }
 
@@ -356,8 +361,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private bool CanNavigateToModule(Uri uri) {
+        public bool CanNavigateToModule(Uri uri) {
             if (uri == null) {
+                return false;
+            }
+
+            if (!CanNavigateToPath(uri.LocalPath)) {
                 return false;
             }
             var rdt = _services.GetService<IRunningDocumentTable>();
@@ -367,11 +376,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return doc == null || CanNavigateToModule(doc);
         }
 
-        private static bool CanNavigateToModule(IPythonModule m)
-            => m?.ModuleType == ModuleType.User ||
-               m?.ModuleType == ModuleType.Stub ||
-               m?.ModuleType == ModuleType.Package ||
-               m?.ModuleType == ModuleType.Library ||
-               m?.ModuleType == ModuleType.Specialized;
+        private static bool CanNavigateToModule(IPythonModule m) {
+            if(m == null || !CanNavigateToPath(m.FilePath)) {
+                return false;
+            }
+            return m.ModuleType == ModuleType.User ||
+                m.ModuleType == ModuleType.Stub ||
+                m.ModuleType == ModuleType.Package ||
+                m.ModuleType == ModuleType.Library ||
+                m.ModuleType == ModuleType.Specialized;
+        }
+
+        private static bool CanNavigateToPath(string path) => Path.GetExtension(path) != ".exe";
     }
 }

@@ -28,15 +28,19 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule)
             : base(declaringModule.Interpreter.ModuleResolution.GetSpecializedModule("typing")) {
-            _types.UnionWith(types);
+            _types.UnionWith(types.Where(t => !this.Equals(t)));
         }
 
         private PythonUnionType(IPythonType x, IPythonType y)
             : base(x.DeclaringModule.Interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
-            _types.Add(x);
-            _types.Add(y);
+            if (!this.Equals(x)) {
+                _types.Add(x);
+            }
+            if (!this.Equals(y)) {
+                _types.Add(y);
+            }
         }
 
         public override PythonMemberType MemberType => PythonMemberType.Union;
@@ -91,7 +95,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Check if any types support indexing
             var result = types
                     .Select(t => t.Index(instance, args))
-                    .FirstOrDefault(r => !r.IsUnknown() && r.GetPythonType() != this);
+                    .FirstOrDefault(r => !r.IsUnknown() && !r.GetPythonType().Equals(this));
             return result ?? DeclaringModule.Interpreter.UnknownType;
         }
 
@@ -112,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IPythonUnionType Add(IPythonUnionType types) {
             lock (_lock) {
-                _types.UnionWith(types);
+                _types.UnionWith(types.Where(t => !this.Equals(t)));
                 return this;
             }
         }
@@ -158,5 +162,16 @@ namespace Microsoft.Python.Analysis.Types {
 
             return utx == null ? uty.Add(x) : utx.Add(uty);
         }
+
+        public override bool Equals(object obj) {
+            if (obj is PythonUnionType u) {
+                lock (_lock) {
+                    return _types.SetEquals(u._types);
+                }
+            }
+            return false;
+        }
+
+        public override int GetHashCode() => 0;
     }
 }
