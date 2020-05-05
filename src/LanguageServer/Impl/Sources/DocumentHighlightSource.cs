@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,8 +22,6 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class DocumentHighlightSource {
@@ -45,43 +42,16 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
             if (definition == null || definingMember == null) {
-                return FromTokens(analysis, location);
+                return Array.Empty<DocumentHighlight>();
             }
 
             var rootDefinition = definingMember.GetRootDefinition();
 
             var result = rootDefinition.References
                 .Where(r => r.DocumentUri.Equals(uri))
-                .Select((r, i) => new DocumentHighlight {
-                    kind = i == 0 ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span
-                })
-                .ToArray();
+                .Select((r, i) => new DocumentHighlight { kind = (i == 0) ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span }).ToArray();
 
             return result;
-        }
-
-        private static DocumentHighlight[] FromTokens(IDocumentAnalysis analysis, SourceLocation location) {
-            var position = analysis.Ast.LocationToIndex(location);
-            var content = analysis.Document.Content;
-
-            var tokenizer = new Tokenizer(analysis.Document.Interpreter.LanguageVersion);
-            tokenizer.Initialize(null, new StringReader(content), SourceLocation.MinValue);
-            var tokens = tokenizer.ReadTokens(content.Length);
-            
-            var t = tokens.FirstOrDefault(x => x.SourceSpan.Start.Index <= position && position < x.SourceSpan.End.Index);
-            if (t.Category != TokenCategory.None) {
-                var length = t.SourceSpan.End.Index - t.SourceSpan.Start.Index;
-                return tokens
-                    .Where(x =>
-                        x.SourceSpan.End.Index - x.SourceSpan.Start.Index == length &&
-                        string.Compare(content, x.SourceSpan.Start.Index, content, t.SourceSpan.Start.Index, length) == 0)
-                    .Select(s => new DocumentHighlight {
-                        kind = DocumentHighlightKind.Text,
-                        range = s.SourceSpan
-                    }).ToArray();
-            }
-
-            return null;
         }
     }
 }
