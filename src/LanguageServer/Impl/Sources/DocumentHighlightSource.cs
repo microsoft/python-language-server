@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         public async Task<DocumentHighlight[]> DocumentHighlightAsync(Uri uri, SourceLocation location, CancellationToken cancellationToken = default) {
             if (uri == null) {
-                return null;
+                return Array.Empty<DocumentHighlight>();
             }
 
             var analysis = await Document.GetAnalysisAsync(uri, _services, DocumentHighlightAnalysisTimeout, cancellationToken);
@@ -49,7 +49,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var result = rootDefinition.References
                 .Where(r => r.DocumentUri.Equals(uri))
-                .Select((r, i) => new DocumentHighlight { kind = (i == 0) ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span }).ToArray();
+                .Select((r, i) => new DocumentHighlight { kind = (i == 0) ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span })
+                .ToArray();
 
             return result;
         }
