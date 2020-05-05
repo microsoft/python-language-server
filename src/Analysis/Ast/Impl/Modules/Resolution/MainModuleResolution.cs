@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
-            if (TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
+            if (ModuleResolution.TryCreateModuleStub(name, moduleImport.ModulePath, Services, CurrentPathResolver, out var stub)) {
                 Analyzer.InvalidateAnalysis(stub);
             } else {
                 // If nothing found, try Typeshed.
@@ -275,22 +275,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         // For tests
         internal void AddUnimportableModule(string moduleName)
             => Modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, Services));
-
-        private bool TryCreateModuleStub(string name, string modulePath, out IPythonModule module) {
-            // First check stub next to the module.
-            if (!string.IsNullOrEmpty(modulePath)) {
-                var pyiPath = Path.ChangeExtension(modulePath, "pyi");
-                if (FileSystem.FileExists(pyiPath)) {
-                    module = new StubPythonModule(name, pyiPath, false, Services);
-                    return true;
-                }
-            }
-
-            // Try location of stubs that are in a separate folder next to the package.
-            var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => FileSystem.FileExists(p));
-            module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, Services) : null;
-            return module != null;
-        }
 
         private IRunningDocumentTable GetRdt()
             => _rdt ?? (_rdt = Services.GetService<IRunningDocumentTable>());

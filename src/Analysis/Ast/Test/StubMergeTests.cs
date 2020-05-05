@@ -62,5 +62,27 @@ namespace Microsoft.Python.Analysis.Tests {
             var environType = environ.GetPythonType();
             environType.Documentation.Should().NotBeNullOrEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task UserFileStub() {
+            const string code = @"
+class A1: 
+    def M1(self):
+        return 's'; 
+
+x = A1.M1()
+";
+            const string stubCode = @"
+class A1: 
+    def M1(self) -> int:
+        pass
+";
+            await TestData.CreateTestSpecificFileAsync("module.pyi", stubCode);
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Document.Stub.Should().NotBeNull();
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+        }
     }
 }

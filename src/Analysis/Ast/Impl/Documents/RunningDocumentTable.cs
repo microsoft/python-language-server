@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
@@ -101,10 +102,15 @@ namespace Microsoft.Python.Analysis.Documents {
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
-                        FilePath = filePath,
+                        FilePath = filePath ?? uri.LocalPath,
                         Uri = uri,
                         ModuleType = moduleType
                     };
+                    
+                    if (ModuleResolution.TryCreateModuleStub(mco.ModuleName, mco.FilePath, _services, resolver, out var stub)) {
+                        mco.Stub = stub;
+                    }
+
                     entry = CreateDocument(mco);
                     created = true;
                 }

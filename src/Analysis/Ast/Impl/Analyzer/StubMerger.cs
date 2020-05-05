@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </remarks>
         public void MergeStub(IDocumentAnalysis stubAnalysis, CancellationToken cancellationToken) {
             cancellationToken.ThrowIfCancellationRequested();
-            if (_eval.Module.ModuleType == ModuleType.User || _eval.Module.ModuleType == ModuleType.Stub) {
+            if (_eval.Module.ModuleType == ModuleType.Stub) {
                 return;
             }
             // No stub, no merge.
