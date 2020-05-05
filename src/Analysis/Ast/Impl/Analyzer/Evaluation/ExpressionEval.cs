@@ -56,7 +56,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     AnalysisCachingLevel = AnalysisCachingLevel.None,
                     StubOnlyAnalysis = true,
                     KeepLibraryAst = false,
-                    KeepLibraryLocalVariables = false,
                     LintingEnabled = true
                 };
             }
