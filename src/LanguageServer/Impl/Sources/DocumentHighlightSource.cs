@@ -24,7 +24,6 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class DocumentHighlightSource {
@@ -37,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         public async Task<DocumentHighlight[]> DocumentHighlightAsync(Uri uri, SourceLocation location, CancellationToken cancellationToken = default) {
             if (uri == null) {
-                return null;
+                return Array.Empty<DocumentHighlight>();
             }
 
             var analysis = await Document.GetAnalysisAsync(uri, _services, DocumentHighlightAnalysisTimeout, cancellationToken);
