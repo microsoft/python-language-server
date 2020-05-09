@@ -149,6 +149,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     MergeMembers(v, sourceFunction, stubType, cancellationToken);
                     break;
 
+                case PythonPropertyType sourceProperty:
+                    MergeMembers(v, sourceProperty, stubType, cancellationToken);
+                    break;
+
                 case IPythonModule _:
                     // We do not re-declare modules.
                     break;
@@ -181,7 +185,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Replace the class entirely since stub members may use generic types
             // and the class definition is important. We transfer missing members
             // from the original class to the stub.
-            _eval.DeclareVariable(v.Name, v.Value, v.Source);
+            //
+            // In case module is compiled, it is already a stub and has no locations
+            // for code navigation.. In this case we replace the entire variable by one
+            // from the stub rather than just the value since stub variable has location
+            // and its own root definition/reference chain.
+            if (sourceType.DeclaringModule.ModuleType == ModuleType.Compiled || 
+                sourceType.DeclaringModule.ModuleType == ModuleType.CompiledBuiltin) {
+                _eval.ReplaceVariable(v);
+            } else {
+                _eval.DeclareVariable(v.Name, v.Value, v.Source);
+            }
 
             // First pass: go through source class members and pick those 
             // that are not present in the stub class.
@@ -193,7 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; // Do not add unknowns to the stub.
                 }
                 var sourceMemberType = sourceMember?.GetPythonType();
-                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceType) {
+                if (sourceMemberType is IPythonClassMember cm && !cm.DeclaringModule.Equals(sourceType.DeclaringModule)) {
                     continue; // Only take members from this class and not from bases.
                 }
                 if (!IsFromThisModuleOrSubmodules(sourceMemberType)) {
@@ -340,7 +354,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var thisModule = _eval.Module;
             var typeModule = type.DeclaringModule;
             var typeMainModuleName = typeModule.Name.Split('.').FirstOrDefault();
-            return typeModule.Equals(thisModule) || typeMainModuleName == thisModule.Name;
+            if (typeModule.Equals(thisModule) || typeMainModuleName == thisModule.Name) {
+                return true;
+            }
+            // Check if module is explicitly imported by the current one. For example, 'os'
+            // imports 'nt' and os.pyi specifies functions from 'nt' such as mkdir and so on.
+            var imported = thisModule.GlobalScope.Variables[typeModule.Name];
+            return imported?.Value != null && imported.Source == VariableSource.Import;
         }
     }
 }

@@ -4,15 +4,15 @@
 
 ### Prerequisites
 
-1. .NET Core 2.2 SDK
+1. .NET Core 3.1 SDK
    - [Windows](https://www.microsoft.com/net/learn/get-started/windows)
    - [Mac OS](https://www.microsoft.com/net/learn/get-started/macos)
    - [Linux](https://www.microsoft.com/net/learn/get-started/linux/rhel)
 2. C# Extension to [VS Code](https://code.visualstudio.com) (all platforms)
 3. Python 2.7
-4. Python 3.6
+4. Python 3.6+
 
-*Alternative:* [Visual Studio 2017 or 2019](https://www.visualstudio.com/downloads/) (Windows only) with .NET Core and C# Workloads. Community Edition is free and is fully functional.
+*Alternative:* [Visual Studio 2019](https://www.visualstudio.com/downloads/) (Windows only) with .NET Core and C# Workloads. Community Edition is free and is fully functional.
 
 ### Setup
 
@@ -54,7 +54,7 @@ On Windows you can also attach from Visual Studio (Debug | Attach To Process).
 ### Unit Tests
 To run unit tests, do one of the following:
 - Run the Unit Tests in the [VS Code Python Extension](https://github.com/Microsoft/vscode-python) project via *Launch Language Server Tests*.
-- On Windows: open the `PLS.sln` solution in Visual Studio 2017 or 2019 and run tests from the Test Explorer.
+- On Windows: open the `PLS.sln` solution in Visual Studio 2019 and run tests from the Test Explorer.
 - Run `dotnet test` from Terminal in the `src` directory, or in a specific directory like `src/Analysis/Ast/Test` to test a specific suite.
 - Install C# extension and .NET Core Test Explorer for VS Code, open src folder in VS Code and run tests.
 

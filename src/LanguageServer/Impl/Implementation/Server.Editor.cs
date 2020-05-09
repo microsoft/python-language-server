@@ -89,8 +89,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
 
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
-            var reference = new DefinitionSource(Services).FindDefinition(analysis, @params.position, out _);
-            return reference != null ? new[] { reference } : Array.Empty<Reference>();
+            var ds = new DefinitionSource(Services);
+            var reference = ds.FindDefinition(analysis, @params.position, out _);
+            return reference != null && ds.CanNavigateToModule(reference.uri) 
+                ? new[] { reference } 
+                : Array.Empty<Reference>();
         }
 
         public async Task<Location> GotoDeclaration(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
@@ -98,8 +101,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Goto Declaration in {uri} at {@params.position}");
 
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
-            var reference = new DeclarationSource(Services).FindDefinition(analysis, @params.position, out _);
-            return reference != null ? new Location { uri = reference.uri, range = reference.range } : null;
+            var ds = new DeclarationSource(Services);
+            var reference = ds.FindDefinition(analysis, @params.position, out _);
+            return reference != null && ds.CanNavigateToModule(reference.uri) 
+                ? new Location { uri = reference.uri, range = reference.range } 
+                : null;
         }
 
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
@@ -137,8 +143,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             return codeActions.ToArray();
 
-            static bool AskedFor(CodeActionParams @params, string codeActionKind) {
-                return @params.context.only == null || @params.context.only.Any(s => s.StartsWith(codeActionKind));
+            bool AskedFor(CodeActionParams p, string codeActionKind) {
+                return p.context.only == null || p.context.only.Any(s => s.StartsWith(codeActionKind));
             }
         }
     }

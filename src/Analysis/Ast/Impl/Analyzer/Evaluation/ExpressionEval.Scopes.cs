@@ -176,6 +176,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return new ScopeTracker(this);
         }
 
+        internal void ReplaceVariable(IVariable v) => CurrentScope.ReplaceVariable(v);
+
         private class ScopeTracker : IDisposable {
             private readonly ExpressionEval _eval;
 

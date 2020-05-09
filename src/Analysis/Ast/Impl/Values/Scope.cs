@@ -98,6 +98,11 @@ namespace Microsoft.Python.Analysis.Values {
 
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new Dictionary<ScopeStatement, Scope>()))[s.Node] = s;
 
+        internal void ReplaceVariable(IVariable v) {
+            VariableCollection.RemoveVariable(v.Name);
+            VariableCollection.DeclareVariable(v.Name, v.Value, v.Source, v.Location);
+        }
+
         private VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
 
         private void DeclareBuiltinVariables() {
