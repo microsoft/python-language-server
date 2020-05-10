@@ -14,16 +14,15 @@
 // permissions and limitations under the License.
 
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
-using Microsoft.Python.Parsing.Tests;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -115,6 +114,41 @@ assert x != 3
             highlights[0].kind.Should().Be(DocumentHighlightKind.Text);
             highlights[1].range.Should().Be(2, 7, 2, 8);
             highlights[1].kind.Should().Be(DocumentHighlightKind.Text);
+        }
+
+        [TestMethod, Priority(0)]
+        public void TokenCacheEntriesLimit() {
+            var c = new TokenCache(3, TimeSpan.FromMinutes(1));
+            c.GetTokens("1", PythonLanguageVersion.V38);
+            c.GetTokens("12", PythonLanguageVersion.V38);
+            c.GetTokens("123", PythonLanguageVersion.V38);
+            c.GetTokens("1234", PythonLanguageVersion.V38);
+
+            (DateTime AccessTime, IReadOnlyList<TokenInfo> Tokens)[] e = c.Entries.ToArray();
+
+            e.Should().HaveCount(3);
+            var byTime = e.OrderBy(x => x.AccessTime).ToArray();
+            (byTime[0].Tokens[0].SourceSpan.End.Column - byTime[0].Tokens[0].SourceSpan.Start.Column).Should().Be(2);
+            (byTime[1].Tokens[0].SourceSpan.End.Column - byTime[1].Tokens[0].SourceSpan.Start.Column).Should().Be(3);
+            (byTime[2].Tokens[0].SourceSpan.End.Column - byTime[2].Tokens[0].SourceSpan.Start.Column).Should().Be(4);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TokenCacheExpiration() {
+            var c = new TokenCache(5, TimeSpan.FromMilliseconds(50));
+            c.GetTokens("1", PythonLanguageVersion.V38);
+            await Task.Delay(10);
+            c.GetTokens("12", PythonLanguageVersion.V38);
+            await Task.Delay(10);
+            c.GetTokens("123", PythonLanguageVersion.V38);
+            await Task.Delay(40);
+            c.GetTokens("1234", PythonLanguageVersion.V38);
+
+            (DateTime AccessTime, IReadOnlyList<TokenInfo> Tokens)[] e = c.Entries.ToArray();
+            e.Should().HaveCount(2);
+            var byTime = e.OrderBy(x => x.AccessTime).ToArray();
+            (byTime[0].Tokens[0].SourceSpan.End.Column - byTime[1].Tokens[0].SourceSpan.Start.Column).Should().Be(3);
+            (byTime[1].Tokens[0].SourceSpan.End.Column - byTime[1].Tokens[0].SourceSpan.Start.Column).Should().Be(4);
         }
     }
 }
