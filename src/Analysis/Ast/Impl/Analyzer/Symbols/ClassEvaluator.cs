@@ -72,36 +72,41 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 SymbolTable.Evaluate(b.ClassDefinition);
             }
 
-            // Process imports
-            foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                ImportHandler.HandleFromImport(s);
-            }
-            foreach (var s in GetStatements<ImportStatement>(_classDef)) {
-                ImportHandler.HandleImport(s);
-            }
-            UpdateClassMembers();
-
-            // Process assignments so we get class variables declared.
-            // Note that annotated definitions and assignments can be intermixed
-            // and must be processed in order. Consider
-            //    class A:
-            //      x: int
-            //      x = 1
-            foreach (var s in GetStatements<Statement>(_classDef)) {
-                switch (s) {
-                    case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment, LookupOptions.All);
-                        break;
-                    case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, LookupOptions.All);
-                        break;
+            if (!Eval.StubOnlyAnalysis) {
+                // Process imports
+                foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
+                    ImportHandler.HandleFromImport(s);
                 }
-            }
-            UpdateClassMembers();
 
-            // Ensure constructors are processed so class members are initialized.
-            EvaluateConstructors(_classDef);
-            UpdateClassMembers();
+                foreach (var s in GetStatements<ImportStatement>(_classDef)) {
+                    ImportHandler.HandleImport(s);
+                }
+
+                UpdateClassMembers();
+
+                // Process assignments so we get class variables declared.
+                // Note that annotated definitions and assignments can be intermixed
+                // and must be processed in order. Consider
+                //    class A:
+                //      x: int
+                //      x = 1
+                foreach (var s in GetStatements<Statement>(_classDef)) {
+                    switch (s) {
+                        case AssignmentStatement assignment:
+                            AssignmentHandler.HandleAssignment(assignment, LookupOptions.All);
+                            break;
+                        case ExpressionStatement e:
+                            AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, LookupOptions.All);
+                            break;
+                    }
+                }
+
+                UpdateClassMembers();
+
+                // Ensure constructors are processed so class members are initialized.
+                EvaluateConstructors(_classDef);
+                UpdateClassMembers();
+            }
 
             // Process remaining methods.
             SymbolTable.EvaluateScope(_classDef);

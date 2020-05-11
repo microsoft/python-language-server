@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -70,8 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!string.IsNullOrEmpty(cd.NameExpression?.Name) &&
-                _typeMap.ContainsKey(cd)) {
+            if (!string.IsNullOrEmpty(cd.NameExpression?.Name) && _typeMap.ContainsKey(cd)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
@@ -136,43 +134,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
-            // Check if function exists in stubs. If so, take overload from stub
-            // and the documentation from this actual module.
-            if (!_table.ReplacedByStubs.Contains(fd)) {
-                var stubOverload = GetOverloadFromStub(fd);
-                if (stubOverload != null) {
-                    var documentation = fd.GetDocumentation();
-                    if (!string.IsNullOrEmpty(documentation)) {
-                        stubOverload.SetDocumentation(documentation);
-                    }
-                    addOverload(stubOverload);
-                    _table.ReplacedByStubs.Add(fd);
-                    return;
-                }
-            }
-
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
-                _table.Add(new FunctionEvaluator(_eval, overload));
+                if (!_eval.StubOnlyAnalysis) {
+                    _table.Add(new FunctionEvaluator(_eval, overload));
+                }
             }
-        }
-
-        private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {
-            var t = GetMemberFromStub(node.Name).GetPythonType();
-            if (t is IPythonFunctionType f) {
-                return f.Overloads
-                    .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Count(p => !p.IsPositionalOnlyMarker));
-            }
-            return null;
         }
 
         private bool TryAddProperty(FunctionDefinition node, PythonType declaringType) {
             // We can't add a property to an unknown type. Fallback to a regular function for now.
-            // TOOD: Decouple declaring types from the property.
+            // TODO: Decouple declaring types from the property.
             if (declaringType.IsUnknown()) {
                 return false;
             }

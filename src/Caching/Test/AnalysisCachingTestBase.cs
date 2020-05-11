@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.Analysis.Types;
 using Newtonsoft.Json;

@@ -45,6 +45,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var d = a.LintModule(analysis.Document);
             d.Should().HaveCount(1);
 
+
+            var aop = Services.GetService<IAnalysisOptionsProvider>();
+            if (aop != null) {
+                Services.RemoveService(aop);
+            }
+
             var provider = Substitute.For<IAnalysisOptionsProvider>();
             Services.AddService(provider);
 

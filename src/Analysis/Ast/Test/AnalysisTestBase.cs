@@ -93,6 +93,14 @@ namespace Microsoft.Python.Analysis.Tests {
                 sm.AddService(ds);
             }
 
+            var ap = Substitute.For<IAnalysisOptionsProvider>();
+            ap.Options.Returns(x => new AnalysisOptions {
+                AnalysisCachingLevel = AnalysisCachingLevel.None,
+                StubOnlyAnalysis = false,
+                LintingEnabled = true
+            });
+            sm.AddService(ap);
+
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
 
             CacheService.Register(sm, stubCacheFolderPath, pathCheck: false);

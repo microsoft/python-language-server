@@ -36,15 +36,5 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
         Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Determines if module analysis exists in the storage.
-        /// </summary>
-        bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType);
-    }
-
-    internal static class ModuleDatabaseExtensions {
-        public static bool ModuleExistsInStorage(this IModuleDatabaseService dbs, IPythonModule module)
-            => dbs.ModuleExistsInStorage(module.Name, module.FilePath, module.ModuleType);
     }
 }

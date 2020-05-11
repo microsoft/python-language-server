@@ -79,9 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var rightVar = Eval.GetValueFromExpression(node.Right);
-            var right = rightVar as IPythonCollection;
-
-            if (right == null) {
+            if (!(rightVar is IPythonCollection right)) {
                 _allIsUsable = false;
                 return;
             }
@@ -202,7 +200,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _cancellationToken.ThrowIfCancellationRequested();
 
             SymbolTable.EvaluateAll();
-            SymbolTable.ReplacedByStubs.Clear();
             new StubMerger(Eval).MergeStub(_stubAnalysis, _cancellationToken);
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)

@@ -132,6 +132,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
             optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
+            optionsProvider.Options.StubOnlyAnalysis = GetSetting(analysis, "stubsOnly", true);
 
             _logger?.Log(TraceEventType.Information, Resources.AnalysisCacheLevel.FormatInvariant(optionsProvider.Options.AnalysisCachingLevel));
         }
