@@ -26,7 +26,6 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
-        private bool _suppressDiagnostics;
 
         public UndefinedVariablesWalker(IDocumentAnalysis analysis, IServiceContainer services)
             : base(analysis, services) { }
@@ -53,11 +52,9 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                         augs.Right?.Walk(new ExpressionWalker(this));
                         break;
                     case AssignmentStatement asst:
-                        _suppressDiagnostics = true;
-                        foreach (var lhs in asst.Left ?? Enumerable.Empty<Expression>()) {
+                        foreach (var lhs in asst.Left.MaybeEnumerate().Where(x => !(x is NameExpression))) {
                             lhs?.Walk(new ExpressionWalker(this));
                         }
-                        _suppressDiagnostics = false;
                         asst.Right?.Walk(new ExpressionWalker(this));
                         break;
                     default:
@@ -73,12 +70,10 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             ReportUndefinedVariable(node.Name, eval.GetLocation(node).Span);
         }
 
-        public void ReportUndefinedVariable(string name, SourceSpan span) {
-            if (!_suppressDiagnostics) {
-                _diagnostics.Add(new DiagnosticsEntry(
-                    Resources.UndefinedVariable.FormatInvariant(name),
-                    span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
-            }
+        private void ReportUndefinedVariable(string name, SourceSpan span) {
+            _diagnostics.Add(new DiagnosticsEntry(
+                Resources.UndefinedVariable.FormatInvariant(name),
+                span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
         }
 
         private void HandleGlobal(GlobalStatement node) {
