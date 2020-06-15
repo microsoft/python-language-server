@@ -23,7 +23,7 @@
   <!-- Target .NET Core Runtimes -->
   <PropertyGroup>
     <!-- See https://docs.microsoft.com/en-us/dotnet/core/rid-catalog -->
-    <RuntimeIdentifiers>win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x86;win-x64;osx-x64;linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup>
