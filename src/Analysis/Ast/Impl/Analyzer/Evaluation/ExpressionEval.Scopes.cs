@@ -165,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // node points to global scope, it is not a function or a class.
                     scope = gs;
                 } else {
-                    scope = outerScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                    scope = outerScope.GetChildScope(node) as Scope;
                     if (scope == null) {
                         scope = new Scope(node, outerScope, Module);
                         outerScope.AddChildScope(scope);

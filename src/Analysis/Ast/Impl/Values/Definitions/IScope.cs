@@ -48,6 +48,11 @@ namespace Microsoft.Python.Analysis.Values {
         /// </summary>
         IReadOnlyList<IScope> Children { get; }
 
+        /// <summary>	
+        /// Locates child scope by name.	
+        /// </summary>	
+        IScope GetChildScope(ScopeStatement node);
+
         /// <summary>
         /// Enumerates scopes from this one to global scope.
         /// </summary>

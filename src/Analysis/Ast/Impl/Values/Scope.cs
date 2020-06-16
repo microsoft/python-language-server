@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
         private VariableCollection _imported;
-        private List<Scope> _childScopes;
+        private Dictionary<ScopeStatement, Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
             OuterScope = outerScope;
@@ -47,7 +47,8 @@ namespace Microsoft.Python.Analysis.Values {
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
-        public IReadOnlyList<IScope> Children => _childScopes?.ToArray() ?? Array.Empty<IScope>();
+        public IReadOnlyList<IScope> Children => _childScopes?.Values.ToArray() ?? Array.Empty<IScope>();
+        public IScope GetChildScope(ScopeStatement node) => _childScopes != null && _childScopes.TryGetValue(node, out var s) ? s : null;
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
@@ -91,7 +92,8 @@ namespace Microsoft.Python.Analysis.Values {
             => (_imported ?? (_imported = new VariableCollection())).DeclareVariable(name, value, VariableSource.Import, location);
         #endregion
 
-        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
+        internal void AddChildScope(Scope s) 
+            => (_childScopes ?? (_childScopes = new Dictionary<ScopeStatement, Scope>()))[s.Node] = s;
 
         internal void ReplaceVariable(IVariable v) {
             VariableCollection.RemoveVariable(v.Name);
@@ -115,16 +117,18 @@ namespace Microsoft.Python.Analysis.Values {
                 var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
                 var tupleType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
 
-                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin, location);
-                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin, location);
+                DeclareBuiltinVariable("__closure__", tupleType, location);
+                DeclareBuiltinVariable("__code__", objType, location);
+                DeclareBuiltinVariable("__defaults__", tupleType, location);
+                DeclareBuiltinVariable("__dict__", dictType, location);
+                DeclareBuiltinVariable("__doc__", strType, location);
+                DeclareBuiltinVariable("__func__", objType, location);
+                DeclareBuiltinVariable("__globals__", dictType, location);
             } else if (Node is ClassDefinition) {
-                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, location);
+                DeclareBuiltinVariable("__self__", objType, location);
             }
         }
+        protected void DeclareBuiltinVariable(string name, IPythonType type, Location location)
+            => VariableCollection.DeclareVariable(name, type, VariableSource.Builtin, location);
     }
 }
