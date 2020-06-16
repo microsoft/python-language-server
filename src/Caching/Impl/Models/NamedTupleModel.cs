@@ -18,6 +18,8 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -27,16 +29,29 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string[] ItemNames { get; set; }
         public string[] ItemTypes { get; set; }
 
+        [NonSerialized] private NamedTupleType _namedTuple;
+
         public NamedTupleModel() { } // For de-serializer from JSON
 
-        public NamedTupleModel(ITypingNamedTupleType nt, IServiceContainer services) {
+        public NamedTupleModel(ITypingNamedTupleType nt) {
             Id = nt.Name.GetStableHash();
             Name = nt.Name;
-            DeclaringModuleId = nt.DeclaringModule.GetUniqueId(services);
             QualifiedName = nt.QualifiedName;
             IndexSpan = nt.Location.IndexSpan.ToModel();
             ItemNames = nt.ItemNames.ToArray();
             ItemTypes = nt.ItemTypes.Select(t => t.QualifiedName).ToArray();
         }
+
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
+            if (_namedTuple != null) {
+                return _namedTuple;
+            }
+
+            var itemTypes = ItemTypes.Select(mf.ConstructType).ToArray();
+            _namedTuple = new NamedTupleType(Name, ItemNames, itemTypes, mf.Module, IndexSpan.ToSpan());
+            return _namedTuple;
+        }
+
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
     }
 }

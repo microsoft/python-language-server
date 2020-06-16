@@ -476,129 +476,6 @@ a3.";
         }
 
         [TestMethod, Priority(0)]
-        public async Task LoopImports_Variables1() {
-            const string module1Code = @"
-class A1: 
-    def M1(self): return 0; pass
-
-from module2 import y3
-x = y3.M3()
-";
-            const string module2Code = @"
-from module1 import A1
-y1 = A1()
-from module3 import A3
-y3 = A3()
-";
-            const string module3Code = @"
-class A3:
-    def M3(self): return '0'; pass
-
-from module2 import y1
-z = y1.M1()
-";
-
-            const string appCode = @"
-from module1 import x
-from module3 import z
-
-x.
-z.";
-            var module1Uri = TestData.GetTestSpecificUri("module1.py");
-            var module2Uri = TestData.GetTestSpecificUri("module2.py");
-            var module3Uri = TestData.GetTestSpecificUri("module3.py");
-            var appUri = TestData.GetTestSpecificUri("app.py");
-
-            var root = Path.GetDirectoryName(appUri.AbsolutePath);
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
-            var rdt = Services.GetService<IRunningDocumentTable>();
-            var analyzer = Services.GetService<IPythonAnalyzer>();
-
-            rdt.OpenDocument(module3Uri, module3Code);
-            rdt.OpenDocument(module2Uri, module2Code);
-            rdt.OpenDocument(module1Uri, module1Code);
-
-            var app = rdt.OpenDocument(appUri, appCode);
-            await analyzer.WaitForCompleteAnalysisAsync();
-            var analysis = await app.GetAnalysisAsync(-1);
-
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 3));
-            comps.Should().HaveLabels("capitalize");
-
-            comps = cs.GetCompletions(analysis, new SourceLocation(6, 3));
-            comps.Should().HaveLabels("bit_length");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task LoopImports_Variables2() {
-            const string module1Code = @"
-from module3 import A3
-
-class A1: 
-    def M1(self) -> A3: pass
-
-from module2 import y3
-x = y3.M3()
-";
-            const string module2Code = @"
-from module1 import A1
-y1 = A1()
-from module3 import A3
-y3 = A3()
-";
-            const string module3Code = @"
-from module1 import A1
-
-class A3:
-    def M3(self) -> A1: pass
-
-from module2 import y1
-z = y1.M1()
-";
-            const string appCode = @"
-from module1 import x
-from module3 import z
-
-x.
-z.
-
-x.M1().
-z.M3().
-";
-            var module1Uri = TestData.GetTestSpecificUri("module1.py");
-            var module2Uri = TestData.GetTestSpecificUri("module2.py");
-            var module3Uri = TestData.GetTestSpecificUri("module3.py");
-            var appUri = TestData.GetTestSpecificUri("app.py");
-
-            var root = Path.GetDirectoryName(appUri.AbsolutePath);
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
-            var rdt = Services.GetService<IRunningDocumentTable>();
-            var analyzer = Services.GetService<IPythonAnalyzer>();
-
-            rdt.OpenDocument(module3Uri, module3Code);
-            rdt.OpenDocument(module2Uri, module2Code);
-            rdt.OpenDocument(module1Uri, module1Code);
-
-            var app = rdt.OpenDocument(appUri, appCode);
-            await analyzer.WaitForCompleteAnalysisAsync();
-            var analysis = await app.GetAnalysisAsync(-1);
-
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 3));
-            comps.Should().HaveLabels("M1");
-
-            comps = cs.GetCompletions(analysis, new SourceLocation(6, 3));
-            comps.Should().HaveLabels("M3");
-            
-            comps = cs.GetCompletions(analysis, new SourceLocation(8, 8));
-            comps.Should().HaveLabels("M3");
-
-            comps = cs.GetCompletions(analysis, new SourceLocation(9, 8));
-            comps.Should().HaveLabels("M1");
-        }
-
-        [TestMethod, Priority(0)]
         public async Task TypingModule() {
             var analysis = await GetAnalysisAsync(@"from typing import ");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
@@ -809,12 +686,13 @@ class B:
     pass
 " + allCode;
 
-            const string appCode = @"
+            var appCode = @"
 from module1 import *
 
 A().
 B().
 ";
+
             var module1Uri = TestData.GetTestSpecificUri("module1.py");
             var appUri = TestData.GetTestSpecificUri("app.py");
 

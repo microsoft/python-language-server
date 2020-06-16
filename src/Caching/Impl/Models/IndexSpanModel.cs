@@ -14,13 +14,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Diagnostics;
 using Microsoft.Python.Core.Text;
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [Serializable]
     [DebuggerDisplay("{Start}:({Length})")]
     internal sealed class IndexSpanModel {
         public int Start { get; set; }

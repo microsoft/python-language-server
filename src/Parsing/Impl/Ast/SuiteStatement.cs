@@ -14,7 +14,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,8 +33,8 @@ namespace Microsoft.Python.Parsing.Ast {
         public IList<Statement> Statements => _statements;
         public override IEnumerable<Node> GetChildNodes() => _statements.WhereNotNull();
 
-        public void ReduceToImports() 
-            => _statements = new FilteredWalker(this).Statements.ToArray();
+        public void FilterStatements(Func<Statement, bool> filter) 
+            => _statements = _statements.Where(filter).ToArray();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -160,23 +162,6 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
             if (_statements.Length != 0) {
                 _statements[0].SetLeadingWhiteSpace(ast, whiteSpace);
-            }
-        }
-
-        private sealed class FilteredWalker : PythonWalker {
-            public FilteredWalker(Node n) {
-                n.Walk(this);
-            }
-
-            public List<Statement> Statements { get; } = new List<Statement>();
-
-            public override bool Walk(ImportStatement s) {
-                Statements.Add(s);
-                return false;
-            }
-            public override bool Walk(FromImportStatement s) {
-                Statements.Add(s);
-                return false;
             }
         }
     }

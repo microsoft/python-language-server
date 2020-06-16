@@ -39,6 +39,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public void DeclareVariable(string name, IMember value, VariableSource source)
             => DeclareVariable(name, value, source, default(Location));
 
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module)
+            => DeclareVariable(name, value, source, new Location(module));
+
         public void DeclareVariable(string name, IMember value, VariableSource source, Node location, bool overwrite = true)
             => DeclareVariable(name, value, source, GetLocationOfName(location), overwrite);
 
@@ -162,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // node points to global scope, it is not a function or a class.
                     scope = gs;
                 } else {
-                    scope = outerScope.GetChildScope(node) as Scope;
+                    scope = outerScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
                     if (scope == null) {
                         scope = new Scope(node, outerScope, Module);
                         outerScope.AddChildScope(scope);

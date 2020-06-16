@@ -13,20 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Models {
-    /// <summary>
-    /// Model for actual values assigned to generic parameters.
-    /// I.e. if class is based on Generic[T], what is assigned to T.
-    /// </summary>
-    internal sealed class GenericParameterValueModel {
-        /// <summary>
-        /// Generic parameter name as defined by TypeVar, such as T.
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Qualified name of the type assigned to T.
-        /// </summary>
-        public string Type { get; set; }
+namespace Microsoft.Python.Analysis.Modules {
+    public interface IModuleCache {
+        string GetCacheFilePath(string filePath);
+        string ReadCachedModule(string filePath);
+        void WriteCachedModule(string filePath, string code);
     }
 }

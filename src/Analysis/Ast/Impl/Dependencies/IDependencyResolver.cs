@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         int TryAddValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
         int ChangeValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
         int Remove(in TKey key);
-        void Reset();
+        int RemoveKeys(in ImmutableArray<TKey> keys);
 
         IDependencyChainWalker<TKey, TValue> CreateWalker();
         bool TryCreateWalker(in int version, in int walkerDepthLimit, out IDependencyChainWalker<TKey, TValue> walker);

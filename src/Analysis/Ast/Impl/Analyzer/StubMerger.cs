@@ -75,7 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.IsUnknown()) {
                     continue;
                 }
-
                 // If stub says 'Any' but we have better type, keep the current type.
                 if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
@@ -85,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var sourceType = sourceVar?.Value.GetPythonType();
 
                 if (sourceVar?.Source == VariableSource.Import &&
-                    sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
+                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
                     // Keep imported types as they are defined in the library. For example,
                     // 'requests' imports NullHandler as 'from logging import NullHandler'.
                     // But 'requests' also declares NullHandler in its stub (but not in the main code)
@@ -93,36 +92,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // taking types that are stub-only when similar type is imported from another
                     // module that also has a stub.
                     continue;
-                }
-
-                var stubPrimaryModule = stubType.DeclaringModule.PrimaryModule;
-
-                // If type comes from another module and stub type comes from that module stub, skip it.
-                // For example, 'sqlite3.dbapi2' has Date variable with value from 'datetime' module.
-                // Stub of 'sqlite3.dbapi2' also has Date from 'datetime (stub)'. We want to use
-                // type from the primary 'datetime' since it already merged its stub and updated
-                // type location and documentation while 'datetime' stub does not have documentation
-                // and its location is irrelevant since we don't navigate to stub source.
-                if (!_eval.Module.Equals(sourceType?.DeclaringModule) &&
-                    sourceType?.DeclaringModule.Stub != null &&
-                    sourceType.DeclaringModule.Equals(stubPrimaryModule)) {
-                    continue;
-                }
-
-                // If stub type is not from this module stub, redirect type to primary since primary has locations and documentation.
-                if (sourceType == null && stubPrimaryModule != null && !stubPrimaryModule.Equals(_eval.Module)) {
-                    Debug.Assert(stubType.DeclaringModule.ModuleType == ModuleType.Stub);
-                    switch (stubType) {
-                        case PythonVariableModule vm:
-                            stubType = vm.Module.PrimaryModule ?? stubType;
-                            break;
-                        case IPythonModule mod:
-                            stubType = mod.PrimaryModule ?? stubType;
-                            break;
-                        default:
-                            stubType = stubPrimaryModule.GetMember(v.Name)?.GetPythonType() ?? stubType;
-                            break;
-                    }
                 }
 
                 TryReplaceMember(v, sourceType, stubType, cancellationToken);
@@ -298,7 +267,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Consider that 'email.headregistry' stub has DataHeader declaring 'datetime'
             // property of type 'datetime' from 'datetime' module. We don't want to modify
             // datetime type and change it's location to 'email.headregistry'.
-            if (stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
+            if(stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
                 return;
             }
 
@@ -348,7 +317,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// or location of unrelated types such as coming from the base object type.
         /// </remarks>
         private bool IsFromThisModuleOrSubmodules(IPythonType type) {
-            if (type.IsUnknown()) {
+            if(type.IsUnknown()) {
                 return false;
             }
             var thisModule = _eval.Module;

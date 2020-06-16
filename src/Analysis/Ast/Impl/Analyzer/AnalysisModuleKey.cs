@@ -22,7 +22,7 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Name} : {FilePath}")]
-    public readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
+    internal readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
         public string Name { get; }
         public string FilePath { get; }
         public bool IsTypeshed { get; }
@@ -33,13 +33,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             module.IsTypeshed,
             IsNonUserAsDocumentModule(module)) { }
 
-        public AnalysisModuleKey(string name, string filePath, bool isTypeshed = false)
+        public AnalysisModuleKey(string name, string filePath, bool isTypeshed)
             : this(name, filePath, isTypeshed, false) { }
 
         private AnalysisModuleKey(string name, string filePath, bool isTypeshed, bool isNonUserAsDocument) {
             Name = name;
             FilePath = filePath;
             IsTypeshed = isTypeshed;
+            IsNonUserAsDocument = isNonUserAsDocument;
         }
 
         public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, true);
@@ -69,6 +70,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override string ToString() => $"{Name}({FilePath})";
+
+        public bool IsNonUserAsDocument { get; }
 
         private static bool IsNonUserAsDocumentModule(IPythonModule module)
             => (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument document && document.IsOpen;

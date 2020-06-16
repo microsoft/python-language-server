@@ -26,8 +26,8 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IStubCache StubCache => Interpreter.ModuleResolution.StubCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, bool isTypeshed, IServiceContainer services)
-            : base(moduleName, filePath, moduleType, stub, isTypeshed, services) { }
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, bool isPersistent, bool isTypeshed, IServiceContainer services)
+            : base(moduleName, filePath, moduleType, stub, isPersistent, isTypeshed, services) { }
 
         public override string Documentation
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;

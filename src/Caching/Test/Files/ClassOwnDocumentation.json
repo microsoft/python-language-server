@@ -1,6 +1,5 @@
 {
   "UniqueId": "module",
-  "FilePath": null,
   "Documentation": "",
   "Functions": [],
   "Variables": [
@@ -8,7 +7,6 @@
       "Value": "t:bool",
       "Id": -529376420,
       "Name": "__debug__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__debug__",
       "IndexSpan": {
         "Start": 0,
@@ -19,7 +17,6 @@
       "Value": "t:str",
       "Id": -1636005055,
       "Name": "__doc__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__doc__",
       "IndexSpan": {
         "Start": 0,
@@ -30,7 +27,6 @@
       "Value": "t:str",
       "Id": 875442003,
       "Name": "__file__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__file__",
       "IndexSpan": {
         "Start": 0,
@@ -41,7 +37,6 @@
       "Value": "t:str",
       "Id": 1097116834,
       "Name": "__name__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__name__",
       "IndexSpan": {
         "Start": 0,
@@ -52,7 +47,6 @@
       "Value": "t:str",
       "Id": 75395663,
       "Name": "__package__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__package__",
       "IndexSpan": {
         "Start": 0,
@@ -63,7 +57,6 @@
       "Value": "t:list",
       "Id": 1154586556,
       "Name": "__path__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__path__",
       "IndexSpan": {
         "Start": 0,
@@ -74,7 +67,6 @@
       "Value": "t:dict",
       "Id": 817929997,
       "Name": "__dict__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__dict__",
       "IndexSpan": {
         "Start": 0,
@@ -85,7 +77,6 @@
       "Value": "t:object",
       "Id": 1253875154,
       "Name": "__spec__",
-      "DeclaringModuleId": null,
       "QualifiedName": "__spec__",
       "IndexSpan": {
         "Start": 0,
@@ -108,7 +99,6 @@
       "GenericParameterValues": [],
       "Id": 778,
       "Name": "A",
-      "DeclaringModuleId": "module",
       "QualifiedName": "module:A",
       "IndexSpan": {
         "Start": 8,
@@ -116,9 +106,9 @@
       }
     },
     {
-      "Documentation": "class A doc",
+      "Documentation": null,
       "Bases": [
-        "t:module:A$module",
+        "t:module:A",
         "t:object"
       ],
       "NamedTupleBases": [],
@@ -129,13 +119,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:B$module",
+                  "Type": "t:module:B",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": null,
-              "Documentation": null
+              "ReturnType": null
             }
           ],
           "Documentation": null,
@@ -144,7 +133,6 @@
           "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
-          "DeclaringModuleId": "module",
           "QualifiedName": "module:B.__init__",
           "IndexSpan": {
             "Start": 58,
@@ -159,7 +147,6 @@
       "GenericParameterValues": [],
       "Id": 779,
       "Name": "B",
-      "DeclaringModuleId": "module",
       "QualifiedName": "module:B",
       "IndexSpan": {
         "Start": 43,
@@ -204,9 +191,12 @@
     }
   ],
   "FileSize": 115,
+  "Imports": [],
+  "FromImports": [],
+  "StubImports": [],
+  "StubFromImports": [],
   "Id": -2131035837,
   "Name": "module",
-  "DeclaringModuleId": null,
   "QualifiedName": "module",
   "IndexSpan": null
 }

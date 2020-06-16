@@ -37,7 +37,9 @@ namespace Microsoft.Python.Analysis.Types {
             Base
         }
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
+
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly object _membersLock = new object();
 
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -67,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IEnumerable<string> GetMemberNames() {
-            lock (MembersLock) {
+            lock (_membersLock) {
                 var names = new HashSet<string>(Members.Keys);
                 foreach (var m in Mro.Skip(1)) {
                     names.UnionWith(m.GetMemberNames());
@@ -77,7 +79,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            lock (MembersLock) {
+            lock (_membersLock) {
                 if (Members.TryGetValue(name, out var member)) {
                     return member;
                 }
@@ -185,7 +187,7 @@ namespace Microsoft.Python.Analysis.Types {
         public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
         public IReadOnlyList<IPythonType> Bases {
             get {
-                lock (MembersLock) {
+                lock (_membersLock) {
                     return _bases?.ToArray();
                 }
             }
@@ -345,7 +347,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Get locally declared variable, make sure it is a declaration
                         // and that it declared a class.
                         var lv = scope.Variables[b.Name];
-                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(Location)) {
+                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(this.Location)) {
                             // There is a declaration with the same name, but it appears later in the module. Use the import.
                             if (!importedType.IsUnknown()) {
                                 newBases.Add(importedType);

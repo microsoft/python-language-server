@@ -21,12 +21,9 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -124,125 +121,89 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<MemberAssertions, TMember>(this, typedMember);
         }
 
-        public AndConstraint<MemberAssertions> HaveSameMemberNamesAs(IMember member, bool recursive = false) {
+        public AndConstraint<MemberAssertions> HaveSameMemberNamesAs(IMember member) {
             member.Should().BeAssignableTo<IMemberContainer>();
             return HaveMembers(((IMemberContainer)member).GetMemberNames(), string.Empty);
         }
 
-        private static readonly ReentrancyGuard<IPythonType> _memberGuard = new ReentrancyGuard<IPythonType>();
+        public void HaveSameMembersAs(IMember other) {
+            other.Should().BeAssignableTo<IMemberContainer>();
+            var otherContainer = (IMemberContainer)other;
 
-        public void HaveSameMembersAs(IMember expected, bool recursive = false, string because = "", params object[] becauseArgs) {
-            var expectedContainer = expected.Should().BeAssignableTo<IMemberContainer>().Which;
-            var actualContainer = Subject.GetPythonType();
+            var subjectType = Subject.GetPythonType();
+            var subjectMemberNames = subjectType.GetMemberNames().ToArray();
+            var otherMemberNames = otherContainer.GetMemberNames().ToArray();
 
-            using (_memberGuard.Push(actualContainer, out var reentered)) {
-                if (reentered) {
-                    return;
+            var missingNames = otherMemberNames.Except(subjectMemberNames).ToArray();
+            var extraNames = subjectMemberNames.Except(otherMemberNames).ToArray();
+
+            Debug.Assert(missingNames.Length == 0);
+            missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
+
+            Debug.Assert(extraNames.Length == 0);
+            extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
+
+            foreach (var n in subjectMemberNames.Except(Enumerable.Repeat("__base__", 1))) {
+                var subjectMember = subjectType.GetMember(n);
+                var otherMember = otherContainer.GetMember(n);
+                var subjectMemberType = subjectMember.GetPythonType();
+                var otherMemberType = otherMember.GetPythonType();
+
+                // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
+                if (subjectMember is IPythonInstance) {
+                    otherMember.Should().BeAssignableTo<IPythonInstance>();
                 }
-                var actualNames = actualContainer.GetMemberNames().ToArray();
-                var expectedNames = expectedContainer.GetMemberNames().Except(Enumerable.Repeat("<lambda>", 1)).ToArray();
 
-                var errorMessage = GetAssertCollectionOnlyContainsMessage(actualNames, expectedNames, GetQuotedName(Subject), "member", "members");
-                var assertion = Execute.Assertion.BecauseOf(because, becauseArgs);
+                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType, $"Type name: {subjectMemberType.Name}");
+                //Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
 
-                Debug.Assert(errorMessage == null);
-                assertion.ForCondition(errorMessage == null).FailWith(errorMessage);
+                if (subjectMemberType is IPythonClassType subjectClass) {
+                    var otherClass = otherMemberType as IPythonClassType;
+                    otherClass.Should().NotBeNull();
 
-                // TODO: In restored case __iter__ is a function while in analysis it is a specialized class.
-                foreach (var n in actualNames.Except(new[] { "__base__", "__iter__" })) {
-                    var actualMember = actualContainer.GetMember(n);
-                    var expectedMember = expectedContainer.GetMember(n);
-
-                    var actualMemberType = actualMember.GetPythonType();
-                    var expectedMemberType = expectedMember.GetPythonType();
-
-                    // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
-                    if (expectedMember is IPythonInstance && !expectedMember.IsUnknown()) {
-                        // Debug.Assert(actualMember is IPythonInstance);
-                        assertion.ForCondition(actualMember is IPythonInstance)
-                            .FailWith($"Expected '{GetName(actualContainer)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
+                    if (subjectClass is IGenericType gt) {
+                        otherClass.Should().BeAssignableTo<IGenericType>();
+                        otherClass.IsGeneric.Should().Be(gt.IsGeneric, $"Class name: {subjectClass.Name}");
                     }
 
-                    Debug.Assert(actualMemberType.MemberType == expectedMemberType.MemberType);
-                    actualMemberType.MemberType.Should().Be(expectedMemberType.MemberType, $"{expectedMemberType.Name} is {expectedMemberType.MemberType}");
+                    // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
+                    //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
+                    //subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
+                }
 
-                    #region Class comparison
-                    if (actualMemberType is IPythonClassType actualClass) {
-                        var expectedClass = expectedMemberType as IPythonClassType;
-                        expectedClass.Should().NotBeNull();
+                if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
+                    otherMemberType.Documentation.Should().BeNullOrEmpty($"Type name: {subjectMemberType.Name}.");
+                } else {
+                    Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
+                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation, $"Type name: {subjectMemberType.Name}.");
+                }
 
-                        if (actualClass is IGenericType gt) {
-                            expectedClass.Should().BeAssignableTo<IGenericType>();
-                            // Debug.Assert(expectedClass.IsGeneric == gt.IsGeneric);
-                            // https://github.com/microsoft/python-language-server/issues/1753
-                            // expectedClass.IsGeneric.Should().Be(gt.IsGeneric, $"{expectedClass.Name} is generic");
+                switch (subjectMemberType.MemberType) {
+                    case PythonMemberType.Class:
+                        // Restored collections (like instance of tuple) turn into classes
+                        // rather than into collections with content since we don't track
+                        // collection content in libraries. We don't compare qualified names
+                        // since original module may be source or a stub and that is not
+                        // preserved during restore.
+                        // subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
+                        break;
+                    case PythonMemberType.Function:
+                    case PythonMemberType.Method:
+                        subjectMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        if (subjectMemberType is IPythonFunctionType subjectFunction) {
+                            var otherFunction = (IPythonFunctionType)otherMemberType;
+                            subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
                         }
 
-                        // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
-                        //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
-                        //subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
-                    }
-                    #endregion
-
-                    #region Documentation comparison
-                    // Allow documentation replacement from primary
-                    // https://github.com/microsoft/python-language-server/issues/1753
-                    if (expectedMemberType.DeclaringModule.ModuleType != ModuleType.Stub) {
-                        var expectedDoc = expectedMemberType.Documentation?.Trim();
-                        var actualDoc = actualMemberType.Documentation?.Trim();
-
-                        Debug.Assert(expectedDoc == actualDoc);
-                        if (string.IsNullOrEmpty(expectedDoc)) {
-                            assertion.ForCondition(string.IsNullOrEmpty(actualDoc))
-                                .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to have no documentation{{reason}}, but it has '{actualDoc}'");
-                        } else {
-                            assertion.ForCondition(actualDoc.EqualsOrdinal(expectedDoc))
-                                .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualDoc}'");
-                        }
-                    }
-                    #endregion
-
-                    #region Member type specific checks
-                    switch (actualMemberType.MemberType) {
-                        case PythonMemberType.Class:
-                            // Restored collections (like instance of tuple) turn into classes
-                            // rather than into collections with content since we don't track
-                            // collection content in libraries. We don't compare qualified names
-                            // since original module may be source or a stub and that is not
-                            // preserved during restore.
-                            // subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
-                            break;
-                        case PythonMemberType.Function:
-                        case PythonMemberType.Method:
-                            actualMemberType.Should().BeAssignableTo<IPythonFunctionType>();
-                            expectedMemberType.Should().BeAssignableTo<IPythonFunctionType>();
-                            if (actualMemberType is IPythonFunctionType subjectFunction) {
-                                var otherFunction = (IPythonFunctionType)expectedMemberType;
-                                subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
-                            }
-
-                            break;
-                        case PythonMemberType.Property:
-                            actualMemberType.Should().BeAssignableTo<IPythonPropertyType>();
-                            expectedMemberType.Should().BeAssignableTo<IPythonPropertyType>();
-                            break;
-                        case PythonMemberType.Unknown:
-                            actualMemberType.IsUnknown().Should().BeTrue();
-                            break;
-                    }
-                    #endregion
-
-                    // Recurse into members.
-                    // https://github.com/microsoft/python-language-server/issues/1533
-                    // Ex 'BigEndianStructure' in ctypes has attached members from stub.
-                    // However, when running test fetching it from 'ctypes._endian' yields
-                    // class without stub members. This affects tests with partial restoration.
-
-                    // Also, there are issues when restored object methods are 
-                    // not specialized like __iter__ or __getattribute__.
-                    if (recursive) {
-                        actualMemberType.Should().HaveSameMembersAs(expectedMemberType, recursive);
-                    }
+                        break;
+                    case PythonMemberType.Property:
+                        subjectMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        break;
+                    case PythonMemberType.Unknown:
+                        subjectMemberType.IsUnknown().Should().BeTrue();
+                        break;
                 }
             }
         }

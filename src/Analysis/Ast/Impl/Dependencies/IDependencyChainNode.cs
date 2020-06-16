@@ -13,10 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Core.Collections;
-
 namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainNode {
+    internal interface IDependencyChainNode<out TValue> {
         int VertexDepth { get; }
 
         /// <summary>
@@ -35,15 +33,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
         /// Returns true if node version matches version of the walked graph
         /// </summary>
         bool IsValidVersion { get; }
+        TValue Value { get; }
         void MarkWalked();
         void MoveNext();
-    }
-
-    internal interface IDependencyChainSingleNode<out TValue> : IDependencyChainNode {
-        TValue Value { get; }
-    }
-
-    internal interface IDependencyChainLoopNode<TValue> : IDependencyChainNode {
-        ImmutableArray<TValue> Values { get; }
     }
 }

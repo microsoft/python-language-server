@@ -29,9 +29,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public ISet<AnalysisModuleKey> Dependencies { get; } = new HashSet<AnalysisModuleKey>();
 
-        public DependencyCollector(IPythonModule module, bool? isTypeshed = null) {
+        public DependencyCollector(IPythonModule module, bool? isTypeShed = null) {
             _module = module;
-            _isTypeshed = isTypeshed ?? module.IsTypeshed;
+            _isTypeshed = isTypeShed ?? module.IsTypeshed;
             _moduleResolution = module.Interpreter.ModuleResolution;
             _pathResolver = _isTypeshed
                 ? module.Interpreter.TypeshedResolution.CurrentPathResolver

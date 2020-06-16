@@ -235,8 +235,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private IMember GetValueFromMember(MemberExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
-            var memberName = expr?.Name;
-            if (expr?.Target == null || string.IsNullOrEmpty(memberName)) {
+            if (expr?.Target == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
 
@@ -246,9 +245,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var type = m.GetPythonType();
-            var value = type?.GetMember(memberName);
-            var location = GetLocationOfName(expr);
-            type?.AddMemberReference(memberName, this, location);
+            var value = type?.GetMember(expr.Name);
+            type?.AddMemberReference(expr.Name, this, GetLocationOfName(expr));
 
             if (type is IPythonModule) {
                 return value;

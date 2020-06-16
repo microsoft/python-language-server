@@ -19,10 +19,10 @@ using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal interface IDependencyChainWalker<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; set; }
+        ImmutableArray<TKey> MissingKeys { get; }
         ImmutableArray<TValue> AffectedValues { get; }
         int Version { get; }
         int Remaining { get; }
-        Task<IDependencyChainNode> GetNextAsync(CancellationToken cancellationToken);
+        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
     }
 }

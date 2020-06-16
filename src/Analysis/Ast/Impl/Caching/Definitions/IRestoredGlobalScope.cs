@@ -13,20 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Models {
-    /// <summary>
-    /// Model for actual values assigned to generic parameters.
-    /// I.e. if class is based on Generic[T], what is assigned to T.
-    /// </summary>
-    internal sealed class GenericParameterValueModel {
-        /// <summary>
-        /// Generic parameter name as defined by TypeVar, such as T.
-        /// </summary>
-        public string Name { get; set; }
+using Microsoft.Python.Analysis.Values;
 
-        /// <summary>
-        /// Qualified name of the type assigned to T.
-        /// </summary>
-        public string Type { get; set; }
+namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Represents global scope that has been restored from
+    /// the database but has not been fully populated yet.
+    /// Used to attach to analysis so variables can be
+    /// accessed during classes and methods restoration.
+    /// </summary>
+    internal interface IRestoredGlobalScope : IGlobalScope {
+        void ReconstructVariables();
     }
 }

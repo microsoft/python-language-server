@@ -58,13 +58,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private async Task<PythonAst> Parse(string path, CancellationToken parseCt) {
             await _semaphore.WaitAsync(parseCt);
-            PythonAst ast = null;
+            PythonAst ast;
             try {
-                await using var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var parser = Parser.CreateParser(stream, _version);
-                ast = parser.ParseFile(new Uri(path));
-            } catch(Exception ex) when (!ex.IsCriticalException()) {
-                return null;
+                using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var parser = Parser.CreateParser(stream, _version);
+                    ast = parser.ParseFile(new Uri(path));
+                }
             } finally {
                 _semaphore.Release();
             }

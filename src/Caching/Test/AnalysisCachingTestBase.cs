@@ -27,7 +27,7 @@ using Newtonsoft.Json;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
-    public abstract class AnalysisCachingTestBase : AnalysisTestBase {
+    public abstract class AnalysisCachingTestBase: AnalysisTestBase {
         protected AnalysisCachingTestBase() {
             ModuleFactory.EnableMissingMemberAssertions = true;
         }
@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             }
         }
 
-        protected string GetBaselineFileName(string testName, string suffix = null)
-            => Path.ChangeExtension(suffix == null
+        protected string GetBaselineFileName(string testName, string suffix = null) 
+            => Path.ChangeExtension(suffix == null 
                 ? Path.Combine(BaselineFilesFolder, testName)
                 : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
 
@@ -62,20 +62,33 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             return dbModule;
         }
 
-        internal async Task CompareRestoreAsync(ModuleModel model, IPythonModule m, bool recursive = false) {
+        internal async Task CompareBaselineAndRestoreAsync(ModuleModel model, IPythonModule m) {
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
+            // In real case dependency analysis will restore model dependencies.
+            // Here we don't go through the dependency analysis so we have to
+            // manually restore dependent modules.
+            var dc = new DependencyCollector(m);
+            dc.AddImports(model.Imports);
+            dc.AddFromImports(model.FromImports);
+            foreach(var dep in dc.Dependencies) {
+                m.Interpreter.ModuleResolution.GetOrLoadModule(dep.Name);
+            }
+
+            var dcs = new DependencyCollector(m, true);
+            dcs.AddImports(model.StubImports);
+            dcs.AddFromImports(model.StubFromImports);
+            foreach (var dep in dcs.Dependencies) {
+                m.Interpreter.TypeshedResolution.GetOrLoadModule(dep.Name);
+            }
+
             var analyzer = Services.GetService<IPythonAnalyzer>();
             await analyzer.WaitForCompleteAnalysisAsync();
 
             using (var dbModule = CreateDbModule(model, m.FilePath)) {
-                dbModule.Should().HaveSameMembersAs(m, recursive);
+                dbModule.Should().HaveSameMembersAs(m);
             }
-        }
-
-        internal async Task<ModuleModel> GetModelAsync(string code) {
-            var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-            model.FilePath = null;
-            return model;
         }
     }
 }

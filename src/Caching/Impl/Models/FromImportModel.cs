@@ -15,18 +15,12 @@
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     /// <summary>
-    /// Model for actual values assigned to generic parameters.
-    /// I.e. if class is based on Generic[T], what is assigned to T.
+    /// Represents from import statement for dependency resolution.
     /// </summary>
-    internal sealed class GenericParameterValueModel {
-        /// <summary>
-        /// Generic parameter name as defined by TypeVar, such as T.
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Qualified name of the type assigned to T.
-        /// </summary>
-        public string Type { get; set; }
+    internal sealed class FromImportModel {
+        public string[] RootNames { get; set; }
+        public string[] MemberNames { get; set; }
+        public int DotCount { get; set; }
+        public bool ForceAbsolute { get; set; }
     }
 }

@@ -59,7 +59,8 @@ class B:
 
 c = B().methodB1()
 ";
-            var model = await GetModelAsync(code);
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -79,7 +80,7 @@ class A:
 ";
             var analysis = await GetAnalysisAsync(code);
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-            await CompareRestoreAsync(model, analysis.Document);
+            await CompareBaselineAndRestoreAsync(model, analysis.Document);
         }
 
         [TestMethod, Priority(0)]
@@ -115,6 +116,9 @@ b = A().methodA1()
             analysis.Should().HaveVariable("b").Which.Should().HaveType("B");
 
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
             }
@@ -139,6 +143,8 @@ x = A(1, 'a')
 ";
             var analysis = await GetAnalysisAsync(code);
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
 
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
@@ -156,7 +162,8 @@ class B(A):
     '''__init__ doc'''
         return
 ";
-            var model = await GetModelAsync(code);
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             // In JSON, class A should have 'class A doc' documentation while B should have none.
             Baseline.CompareToFile(BaselineFileName, json);

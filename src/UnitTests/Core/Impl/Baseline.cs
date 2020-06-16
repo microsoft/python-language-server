@@ -93,6 +93,7 @@ namespace TestUtilities {
                 if (expectedLine == null && actualLine == null) {
                     expectedLine = string.Empty;
                     actualLine = string.Empty;
+
                     return 0;
                 }
 

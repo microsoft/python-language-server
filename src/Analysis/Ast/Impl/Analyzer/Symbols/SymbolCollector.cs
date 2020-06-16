@@ -112,6 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return cls;
         }
 
+
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             if (!TryAddProperty(fd, declaringType)) {
@@ -135,7 +136,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             AddOverload(fd, f, o => f.AddOverload(o));
         }
 
-        private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<PythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             if (!_table.ReplacedByStubs.Contains(fd)) {
@@ -165,7 +166,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (t is IPythonFunctionType f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Count(p => !p.IsPositionalOnlyMarker));
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Where(p => !p.IsPositionalOnlyMarker).Count());
             }
             return null;
         }

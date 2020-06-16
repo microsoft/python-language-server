@@ -17,13 +17,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Caching.Lazy;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
@@ -35,20 +34,18 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>For use in tests so missing members will assert.</summary>
         internal static bool EnableMissingMemberAssertions { get; set; }
 
+        // TODO: better resolve circular references.
+        private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
         private readonly ModuleModel _model;
         private readonly IGlobalScope _gs;
-        private readonly ModuleDatabase _db;
-        private readonly IServiceContainer _services;
 
         public IPythonModule Module { get; }
         public Location DefaultLocation { get; }
 
-        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs, IServiceContainer services) {
-            _model = model ?? throw new ArgumentNullException(nameof(model));
-            _gs = gs ?? throw new ArgumentNullException(nameof(gs));
-            _services = services ?? throw new ArgumentNullException(nameof(services));
-            _db = services.GetService<ModuleDatabase>();
-            Module = module ?? throw new ArgumentNullException(nameof(module));
+        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs) {
+            _model = model;
+            _gs = gs;
+            Module = module;
             DefaultLocation = new Location(Module);
         }
 
@@ -99,17 +96,17 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (memberName == "<lambda>") {
-                    return new PythonFunctionType("<lambda>", default, default, string.Empty);
+                    return null;
                 }
 
                 var nextModel = currentModel.GetModel(memberName);
-                //Debug.Assert(nextModel != null,
-                //    $"Unable to find {string.Join(".", memberNames)} in module {Module.Name}");
+                Debug.Assert(nextModel != null, 
+                    $"Unable to find {string.Join(".", memberNames)} in module {Module.Name}");
                 if (nextModel == null) {
                     return null;
                 }
 
-                m = MemberFactory.CreateMember(nextModel, this, _gs, declaringType);
+                m = nextModel.Create(this, declaringType, _gs);
                 Debug.Assert(m != null);
 
                 if (m is IGenericType gt && typeArgs.Count > 0) {
@@ -117,8 +114,11 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 currentModel = nextModel;
-                declaringType = m.GetPythonType();
+                declaringType = m as IPythonType;
                 Debug.Assert(declaringType != null);
+                if (declaringType == null) {
+                    return null;
+                }
             }
 
             return m;
@@ -132,44 +132,25 @@ namespace Microsoft.Python.Analysis.Caching {
             if (parts.ModuleName == Module.Name) {
                 return Module;
             }
-
-            // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
-            // If module is a stub, first try regular module, then the stub since with regular modules
-            // stub data is merged into the module data but there are also standalone stubs like posix.
-            var mres = Module.Interpreter.ModuleResolution;
-            var tres = Module.Interpreter.TypeshedResolution;
-
-            var module = mres.GetImportedModule(parts.ModuleName);
-            if (module == null && parts.IsStub) {
-                module = tres.GetImportedModule(parts.ModuleName);
-            }
-
-            // If module is not loaded, try database.
-            if (module == null) {
-                var moduleId = parts.ModuleId ?? parts.ModuleName;
-                module = _db?.RestoreModule(parts.ModuleName, moduleId);
-            }
-
-            if (module == null) {
-                // Fallback if somehow module is not loaded or missing from the database.
-                // Try loading it directly and wait a bit hoping for the analysis to complete.
-                var resolution = parts.IsStub ? tres : mres;
-                var imports = resolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, Enumerable.Repeat(parts.ModuleName, 1), true);
-                if (imports is ModuleImport moduleImport) {
-                    module = resolution.GetOrLoadModule(moduleImport.FullName);
+            using (_moduleReentrancy.Push(parts.ModuleName, out var reentered)) {
+                if (reentered) {
+                    return null;
                 }
-            }
+                // Here we do not call GetOrLoad since modules references here must
+                // either be loaded already since they were required to create
+                // persistent state from analysis. Also, occasionally types come
+                // from the stub and the main module was never loaded. This, for example,
+                // happens with io which has member with mmap type coming from mmap
+                // stub rather than the primary mmap module.
+                var m = parts.IsStub
+                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName)
+                    : Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
 
-            // Here we do not call GetOrLoad since modules references here must
-            // either be loaded already since they were required to create
-            // persistent state from analysis. Also, occasionally types come
-            // from the stub and the main module was never loaded. This, for example,
-            // happens with io which has member with mmap type coming from mmap
-            // stub rather than the primary mmap module.
-            if (module != null) {
-                module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
+                if (m != null) {
+                    return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
+                }
+                return null;
             }
-            return module;
         }
 
         private IMember GetMember(IMember root, IEnumerable<string> memberNames) {
@@ -200,12 +181,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (member == null) {
-                    //var containerName = mc is IPythonType t ? t.Name : "<mc>";
-                    //Debug.Assert(member != null || EnableMissingMemberAssertions == false, $"Unable to find member {memberName} in {containerName}.");
+                    var containerName = mc is IPythonType t ? t.Name : "<mc>";
+                    Debug.Assert(member != null || EnableMissingMemberAssertions == false, $"Unable to find member {memberName} in {containerName}.");
                     break;
                 }
 
-                member = typeArgs.Count > 0 && member is IGenericType gt && typeArgs.Any(a => !(a is IGenericTypeParameter))
+                member = typeArgs.Count > 0 && member is IGenericType gt
                     ? gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null))
                     : member;
             }
