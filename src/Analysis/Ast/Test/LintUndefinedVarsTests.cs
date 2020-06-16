@@ -857,6 +857,15 @@ x[y] = 1
             d[0].SourceSpan.Should().Be(3, 3, 3, 4);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task UndefinedArray() {
+            const string code = @"
+x[y] = 1
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(2);
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
