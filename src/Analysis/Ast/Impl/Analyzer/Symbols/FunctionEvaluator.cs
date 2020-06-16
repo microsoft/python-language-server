@@ -80,29 +80,44 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             Result = _function;
         }
 
-        private IPythonType TryDetermineReturnValue() {
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation, LookupOptions.All);
-            if (!annotationType.IsUnknown()) {
-                // Annotations are typically types while actually functions return
-                // instances unless specifically annotated to a type such as Type[T].
-                // TODO: try constructing argument set from types. Consider Tuple[_T1, _T2] where _T1 = TypeVar('_T1', str, bytes)
-                var t = annotationType.CreateInstance(ArgumentSet.Empty(FunctionDefinition.ReturnAnnotation, Eval));
-                // If instance could not be created, such as when return type is List[T] and
-                // type of T is not yet known, just use the type.
-                var instance = t.IsUnknown() ? (IMember)annotationType : t;
-                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
-            } else {
-                // Check if function is a generator
-                var suite = FunctionDefinition.Body as SuiteStatement;
-                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                if (yieldExpr != null) {
-                    // Function return is an iterator
-                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                    _overload.SetReturnValue(returnValue, true);
-                }
+        public static IMember GetReturnValueFromAnnotation(ExpressionEval eval, Expression annotation) {
+            if (eval == null || annotation == null) {
+                return null;
             }
-            return annotationType;
+
+            var annotationType = eval.GetTypeFromAnnotation(annotation, LookupOptions.All);
+            if (annotationType.IsUnknown()) {
+                return null;
+            }
+
+            // Annotations are typically types while actually functions return
+            // instances unless specifically annotated to a type such as Type[T].
+            // TODO: try constructing argument set from types. Consider Tuple[_T1, _T2] where _T1 = TypeVar('_T1', str, bytes)
+            var t = annotationType.CreateInstance(ArgumentSet.Empty(annotation, eval));
+            // If instance could not be created, such as when return type is List[T] and
+            // type of T is not yet known, just use the type.
+            var instance = t.IsUnknown() ? (IMember)annotationType : t;
+            return instance;
+        }
+        private IMember TryDetermineReturnValue() {
+            var returnType = GetReturnValueFromAnnotation(Eval, FunctionDefinition.ReturnAnnotation);
+            if (returnType != null) {
+                _overload.SetReturnValue(returnType, true);
+                return returnType;
+            }
+
+            // Check if function is a generator
+            var suite = FunctionDefinition.Body as SuiteStatement;
+            var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+            if (yieldExpr != null) {
+                // Function return is an iterator
+                var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                _overload.SetReturnValue(returnValue, true);
+                return returnValue;
+            }
+
+            return null;
         }
 
         private void CheckValidOverload(IReadOnlyList<IParameterInfo> parameters) {
