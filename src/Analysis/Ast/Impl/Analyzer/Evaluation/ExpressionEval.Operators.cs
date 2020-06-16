@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var leftValue = left is IVariable v1 ? v1.Value : left;
             var rightValue = right is IVariable v2 ? v2.Value : right;
             var isInstance = leftValue is IPythonInstance || rightValue is IPythonInstance;
-            
+
             var leftType = left.GetPythonType();
             var rightType = right.GetPythonType();
 
@@ -141,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     ret = CallOperator(op, left, leftType, right, rightType, expr, tryLeft: false);
                 }
 
-                if (!ret.IsUnknown()) {
+                if (ret.IsUnknown()) {
                     ret = op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
                 }
 
@@ -152,7 +152,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // Try calling the function on the left side, otherwise just return right.
                 var ret = CallOperator(op, left, leftType, right, rightType, expr, tryRight: false);
 
-                if (!ret.IsUnknown()) {
+                if (ret.IsUnknown()) {
                     return ret;
                 }
 
