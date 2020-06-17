@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         #region IPythonAnalyzer
         public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
-        => _analysisCompleteEvent.WaitAsync(cancellationToken);
+            => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
             var entry = GetOrCreateAnalysisEntry(module, out _);
@@ -212,11 +212,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
             var notAllAnalyzed = false;
             lock (_syncObj) {
-                if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
-                    return false; // There are active or pending sessions.	
+                if (_nextSession != null || _currentSession?.IsCompleted == false) {
+                    return false; // There are active or pending sessions.    
                 }
                 if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
-                    return false; // There are modules that are still being parsed.	
+                    return false; // There are modules that are still being parsed.    
                 }
 
                 var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
@@ -224,18 +224,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (notAllAnalyzed) {
-                // Attempt to see if within reasonable time new session starts	
-                // This is a workaround since there may still be concurrency issues	
-                // When module analysis session gets canceled and module never re-queued.	
-                // We don't want to prevent event from firing when this [rarely] happens.	
+                // Attempt to see if within reasonable time new session starts    
+                // This is a workaround since there may still be concurrency issues    
+                // When module analysis session gets canceled and module never re-queued.    
+                // We don't want to prevent event from firing when this [rarely] happens.    
                 for (var i = 0; i < 20; i++) {
                     await Task.Delay(20);
                     lock (_syncObj) {
                         if (_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
-                            break; // Now all modules are analyzed.	
+                            break; // Now all modules are analyzed.    
                         }
-                        if (_currentSession != null || _nextSession != null) {
-                            return false; // New sessions were created	
+                        if (_nextSession != null || _currentSession?.IsCompleted == false) {
+                            return false; // New sessions were created    
                         }
                     }
                 }
@@ -243,7 +243,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             _analysisCompleteEvent.Set();
             AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
-
             return true;
         }
 
@@ -252,7 +251,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
-            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin, dependencies);
 
             lock (_syncObj) {
                 if (_version >= graphVersion) {
@@ -373,12 +372,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private PythonAnalyzerEntry GetOrCreateAnalysisEntry(IPythonModule module, AnalysisModuleKey key) {
             lock (_syncObj) {
-                if (!_analysisEntries.TryGetValue(key, out var entry)) {
-                    var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
-                    entry = new PythonAnalyzerEntry(emptyAnalysis);
-                    _analysisEntries[key] = entry;
-                    _analysisCompleteEvent.Reset();
+                if (_analysisEntries.TryGetValue(key, out var entry)) {
+                    return entry;
                 }
+
+                var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
+                entry = new PythonAnalyzerEntry(emptyAnalysis);
+                _analysisEntries[key] = entry;
+                _analysisCompleteEvent.Reset();
                 return entry;
             }
         }

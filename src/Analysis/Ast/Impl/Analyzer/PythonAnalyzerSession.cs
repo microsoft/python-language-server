@@ -102,7 +102,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (analyzeEntry && _entry != null) {
-                Task.Run(() => AnalyzeEntry(), _analyzerCancellationToken).DoNotWait();
+                Task.Run(AnalyzeEntry, _analyzerCancellationToken).DoNotWait();
             } else {
                 StartAsync().ContinueWith(_startNextSession, _analyzerCancellationToken).DoNotWait();
             }
@@ -140,7 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
-                    isFinal = _walker.MissingKeys.Count == 0 && !isCanceled && remaining == 0;
+                    isFinal = _walker.MissingKeys.Count == 0 && !_isCanceled && remaining == 0;
                     _walker = null;
                 }
 

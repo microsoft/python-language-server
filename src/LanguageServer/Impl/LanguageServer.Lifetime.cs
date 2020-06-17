@@ -116,7 +116,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 Debug.Assert(parentProcess != null, "Parent process does not exist");
                 if (parentProcess != null) {
-                    parentProcess.Exited += (s, e) => _sessionTokenSource.Cancel();
+                    parentProcess.Exited += (s, e) => TerminateProcess();
                 }
             }
 
@@ -125,11 +125,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     while (!_sessionTokenSource.IsCancellationRequested) {
                         await Task.Delay(2000);
                         if (parentProcess.HasExited) {
-                            _sessionTokenSource.Cancel();
+                            TerminateProcess();
                         }
                     }
                 }).DoNotWait();
             }
+        }
+
+        private void TerminateProcess() {
+            _sessionTokenSource?.Cancel();
+            Environment.Exit(0);
         }
 
         private void RegisterServices(InitializeParams initParams) {
