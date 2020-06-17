@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
+        public ModuleState ModuleState => Module?.ModuleState ?? ModuleState.None;
 
         public IDocumentAnalysis Analysis => Module?.Analysis;
         public string Documentation => Module?.Documentation ?? string.Empty;

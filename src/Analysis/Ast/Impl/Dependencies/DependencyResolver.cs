@@ -606,7 +606,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private int _remaining;
             private PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
 
-            public ImmutableArray<TKey> MissingKeys { get; }
+            public ImmutableArray<TKey> MissingKeys { get; set; }
             public ImmutableArray<TValue> AffectedValues { get; }
             public int Version { get; }
 

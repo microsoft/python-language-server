@@ -196,24 +196,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {
-            if (_variableModules.TryGetValue(fullName, out var variableModule)) {
-                return variableModule;
+            if (!_variableModules.TryGetValue(fullName, out var variableModule)) {
+                variableModule = new PythonVariableModule(fullName, Eval.Interpreter);
+                _variableModules[fullName] = variableModule;
             }
 
-            variableModule = new PythonVariableModule(fullName, Eval.Interpreter);
-            _variableModules[fullName] = variableModule;
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in IPythonModule module, in PythonVariableModule parentModule, in string memberName) {
             var moduleFullName = module.Name;
-            if (_variableModules.TryGetValue(moduleFullName, out var variableModule)) {
-                return variableModule;
+            if (!_variableModules.TryGetValue(moduleFullName, out var variableModule)) {
+                variableModule = new PythonVariableModule(module);
+                _variableModules[moduleFullName] = variableModule;
             }
 
-            variableModule = new PythonVariableModule(module);
-            _variableModules[moduleFullName] = variableModule;
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;
         }

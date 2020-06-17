@@ -90,7 +90,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (op.IsComparison()) {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
                 }
-
                 return UnknownType;
             }
 
@@ -144,7 +143,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (ret.IsUnknown()) {
                     ret = op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
                 }
-
                 return isInstance ? new PythonInstance(ret.GetPythonType()) : ret;
             }
 
@@ -152,7 +150,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // Try calling the function on the left side, otherwise just return right.
                 var ret = CallOperator(op, left, leftType, right, rightType, expr, tryRight: false);
 
-                if (ret.IsUnknown()) {
+                if (!ret.IsUnknown()) {
                     return ret;
                 }
 

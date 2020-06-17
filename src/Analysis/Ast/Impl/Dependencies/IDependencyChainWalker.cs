@@ -19,7 +19,7 @@ using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal interface IDependencyChainWalker<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
+        ImmutableArray<TKey> MissingKeys { get; set; }
         ImmutableArray<TValue> AffectedValues { get; }
         int Version { get; }
         int Remaining { get; }

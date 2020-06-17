@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IServiceContainer _services;
         private readonly IDiagnosticsService _diagnosticsService;
         private readonly IProgressReporter _progress;
-        private readonly IPythonAnalyzer _analyzer;
+        private readonly PythonAnalyzer _analyzer;
         private readonly ILogger _log;
         private readonly bool _forceGC;
         private readonly IModuleDatabaseService _moduleDatabaseService;
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _forceGC = forceGC;
 
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
-            _analyzer = _services.GetService<IPythonAnalyzer>();
+            _analyzer = _services.GetService<PythonAnalyzer>();
             _log = _services.GetService<ILogger>();
             _moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
             _progress = progress;
@@ -149,8 +149,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (isFinal) {
                         var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
                         totalMilliseconds = Math.Round(totalMilliseconds, 2);
-                        (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
-                        _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
+                        if (await _analyzer.RaiseAnalysisCompleteAsync(modulesCount, totalMilliseconds)) {
+                            _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
+                        }
                     }
                 }
             }
@@ -412,14 +413,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                                         node.HasOnlyWalkedDependencies &&
                                         node.IsValidVersion;
 
-                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-                if (optionsProvider?.Options.KeepLibraryAst == true) {
-                    createLibraryAnalysis = false;
-                }
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            if (optionsProvider?.Options.KeepLibraryAst == true) {
+                createLibraryAnalysis = false;
+            }
 
-                if (!createLibraryAnalysis) {
-                    return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
-                }
+            if (!createLibraryAnalysis) {
+                return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            }
 
             ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
             document.SetAst(ast);

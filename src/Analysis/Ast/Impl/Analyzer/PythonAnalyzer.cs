@@ -65,8 +65,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
+        #region IPythonAnalyzer
         public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
-            => _analysisCompleteEvent.WaitAsync(cancellationToken);
+        => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
             var entry = GetOrCreateAnalysisEntry(module, out _);
@@ -113,7 +114,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 key = new AnalysisModuleKey(module);
                 _analysisEntries.Remove(key);
             }
-
             _dependencyResolver.Remove(key);
         }
 
@@ -128,7 +128,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 version = _version + 1;
             }
 
-            if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
+            var invalidate = entry.Invalidate(analysisDependencies, version, out var dependencies);
+            if (invalidate) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }
@@ -154,7 +155,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
+            var invalidate = entry.Invalidate(module, ast, bufferVersion, version, out var dependencies);
+            if (invalidate) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }
@@ -205,10 +207,44 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+        #endregion
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
+        internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
+            var notAllAnalyzed = false;
+            lock (_syncObj) {
+                if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
+                    return false; // There are active or pending sessions.	
+                }
+                if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
+                    return false; // There are modules that are still being parsed.	
+                }
+
+                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
+                notAllAnalyzed = notAnalyzed.Length > 0;
+            }
+
+            if (notAllAnalyzed) {
+                // Attempt to see if within reasonable time new session starts	
+                // This is a workaround since there may still be concurrency issues	
+                // When module analysis session gets canceled and module never re-queued.	
+                // We don't want to prevent event from firing when this [rarely] happens.	
+                for (var i = 0; i < 20; i++) {
+                    await Task.Delay(20);
+                    lock (_syncObj) {
+                        if (_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
+                            break; // Now all modules are analyzed.	
+                        }
+                        if (_currentSession != null || _nextSession != null) {
+                            return false; // New sessions were created	
+                        }
+                    }
+                }
+            }
+
             _analysisCompleteEvent.Set();
             AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+
+            return true;
         }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
@@ -219,7 +255,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
 
             lock (_syncObj) {
-                if (_version > graphVersion) {
+                if (_version >= graphVersion) {
                     return;
                 }
 
@@ -254,7 +290,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return false;
             }
 
-            LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
+            LoadMissingDocuments(entry.Module.Interpreter, walker);
 
             lock (_syncObj) {
                 if (_currentSession == null) {
@@ -306,25 +342,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new PythonAnalyzerSession(_services, _progress, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
         }
 
-        private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
-            if (missingKeys.Count == 0) {
-                return;
-            }
-
-            var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
-            foreach (var key in missingKeys) {
+        private void LoadMissingDocuments(IPythonInterpreter interpreter, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker) {
+            foreach (var key in walker.MissingKeys.ToArray()) {
                 lock (_syncObj) {
                     if (_analysisEntries.TryGetValue(key, out _)) {
+                        walker.MissingKeys = walker.MissingKeys.Remove(key);
                         continue;
                     }
                 }
 
                 var (moduleName, _, isTypeshed) = key;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
+
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
                     var entry = GetOrCreateAnalysisEntry(module, out _);
-                    _dependencyResolver.TryAddValue(key, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                    if (module.ModuleType == ModuleType.Specialized) {
+                        walker.MissingKeys = walker.MissingKeys.Remove(key);
+                    } else {
+                        _dependencyResolver.TryAddValue(key, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                    }
                 }
             }
         }

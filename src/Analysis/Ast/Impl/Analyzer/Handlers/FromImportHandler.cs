@@ -59,12 +59,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             for (var i = 0; i < names.Count; i++) {
                 var memberName = names[i].Name;
-                if (!string.IsNullOrEmpty(memberName)) {
-                    var nameExpression = asNames[i] ?? names[i];
-                    var variableName = nameExpression?.Name ?? memberName;
-                    if (!string.IsNullOrEmpty(variableName)) {
-                        DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
-                    }
+                if (string.IsNullOrEmpty(memberName)) {
+                    continue;
+                }
+
+                var nameExpression = asNames[i] ?? names[i];
+                var variableName = nameExpression?.Name ?? memberName;
+                if (!string.IsNullOrEmpty(variableName)) {
+                    DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
                 }
             }
         }
@@ -77,7 +79,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
             var memberNames = imports is ImplicitPackageImport
                 ? variableModule.GetMemberNames()
-                : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
+                : variableModule.Analysis.StarImportMemberNames
+                    ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_")).ToArray();
 
             foreach (var memberName in memberNames) {
                 DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
@@ -113,14 +116,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // If nothing is exported, variables are still accessible.
                 value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
             }
-            
+
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
-            
+
             // Do not declare references to '*'
             var locationExpression = nameLocation is NameExpression nex && nex.Name == "*" ? null : nameLocation;
             Eval.DeclareVariable(variableName, value, VariableSource.Import, locationExpression, canOverwrite);
-            
+
             // Make sure module is loaded and analyzed.
             if (value is IPythonModule m) {
                 ModuleResolution.GetOrLoadModule(m.Name);
@@ -132,8 +135,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (v == null) {
                 return true; // Variable does not exist
             }
-            
-            if(newValue.IsUnknown()) {
+
+            if (newValue.IsUnknown()) {
                 return false; // Do not overwrite potentially good value with unknowns.
             }
 
