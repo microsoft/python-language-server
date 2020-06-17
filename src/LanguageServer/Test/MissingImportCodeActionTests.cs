@@ -256,7 +256,7 @@ import socket
             minIndexOfPrivateSymbol.Should().BeLessThan(maxIndexOfPublicSymbol);
         }
 
-        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS*2)]
         public async Task SymbolOrdering2() {
             var markup = @"from os import path
 {|insertionSpan:|}

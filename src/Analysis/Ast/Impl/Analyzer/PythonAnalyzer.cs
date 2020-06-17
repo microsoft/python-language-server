@@ -215,11 +215,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (_nextSession != null || _currentSession?.IsCompleted == false) {
                     return false; // There are active or pending sessions.    
                 }
-                if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
-                    return false; // There are modules that are still being parsed.    
-                }
 
-                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
+                var notAnalyzed = _analysisEntries.Values
+                    .ExcludeDefault()
+                    .Where(e => e.NotAnalyzed)
+                    .ToArray();
+
                 notAllAnalyzed = notAnalyzed.Length > 0;
             }
 

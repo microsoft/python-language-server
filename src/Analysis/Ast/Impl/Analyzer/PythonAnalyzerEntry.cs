@@ -81,7 +81,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
+        public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis && Module.ModuleType != ModuleType.Specialized && Module.ModuleType != ModuleType.Builtins;
 
         public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) {
             _previousAnalysis = emptyAnalysis;
