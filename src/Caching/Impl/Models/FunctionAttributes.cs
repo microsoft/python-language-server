@@ -17,7 +17,6 @@ using System;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     [Flags]
-    [Serializable]
     internal enum FunctionAttributes {
         Normal,
         Abstract,

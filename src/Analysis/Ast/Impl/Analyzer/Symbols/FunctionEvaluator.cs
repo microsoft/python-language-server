@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
-                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
             }
@@ -99,7 +99,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var instance = t.IsUnknown() ? (IMember)annotationType : t;
             return instance;
         }
-
         private IMember TryDetermineReturnValue() {
             var returnType = GetReturnValueFromAnnotation(Eval, FunctionDefinition.ReturnAnnotation);
             if (returnType != null) {

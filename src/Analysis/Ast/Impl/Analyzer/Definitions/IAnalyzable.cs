@@ -22,6 +22,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// </summary>
     internal interface IAnalyzable {
         /// <summary>
+        /// Returns object that can calculate dependencies of this entry.
+        /// </summary>
+        IDependencyProvider DependencyProvider { get; }
+
+        /// <summary>
         /// Notifies document that analysis is about to begin.
         /// </summary>
         void NotifyAnalysisBegins();

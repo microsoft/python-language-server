@@ -155,7 +155,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var invalidate = entry.Invalidate(module, ast, bufferVersion, version, out var dependencies) || module.Analysis is EmptyAnalysis;
+            var invalidate = entry.Invalidate(module, ast, bufferVersion, version, out var dependencies);
             if (invalidate) {
                 AnalyzeDocument(key, entry, dependencies);
             }
@@ -186,13 +186,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 _forceGCOnNextSession = true;
 
-                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out _);
+                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
                 _analysisEntries.Clear();
                 foreach (var (key, entry) in entriesToPreserve) {
                     _analysisEntries.Add(key, entry);
                 }
 
-                _dependencyResolver.Reset();
+                _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
             }
 
             _services.GetService<IRunningDocumentTable>().ReloadAll();
@@ -212,30 +212,31 @@ namespace Microsoft.Python.Analysis.Analyzer {
         internal async Task<bool> RaiseAnalysisCompleteAsync(int moduleCount, double msElapsed) {
             var notAllAnalyzed = false;
             lock (_syncObj) {
-                if (_nextSession != null || (_currentSession != null && !_currentSession.IsCompleted)) {
-                    return false; // There are active or pending sessions.
-                }
-                if (_analysisEntries.Values.ExcludeDefault().Any(e => e.Module.ModuleState < ModuleState.Analyzing)) {
-                    return false; // There are modules that are still being parsed.
+                if (_nextSession != null || _currentSession?.IsCompleted == false) {
+                    return false; // There are active or pending sessions.    
                 }
 
-                var notAnalyzed = _analysisEntries.Values.ExcludeDefault().Where(e => e.NotAnalyzed).ToArray();
+                var notAnalyzed = _analysisEntries.Values
+                    .ExcludeDefault()
+                    .Where(e => e.NotAnalyzed)
+                    .ToArray();
+
                 notAllAnalyzed = notAnalyzed.Length > 0;
             }
 
             if (notAllAnalyzed) {
-                // Attempt to see if within reasonable time new session starts
-                // This is a workaround since there may still be concurrency issues
-                // When module analysis session gets canceled and module never re-queued.
-                // We don't want to prevent event from firing when this [rarely] happens.
+                // Attempt to see if within reasonable time new session starts    
+                // This is a workaround since there may still be concurrency issues    
+                // When module analysis session gets canceled and module never re-queued.    
+                // We don't want to prevent event from firing when this [rarely] happens.    
                 for (var i = 0; i < 20; i++) {
                     await Task.Delay(20);
                     lock (_syncObj) {
-                        if(_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
-                            break; // Now all modules are analyzed.
+                        if (_analysisEntries.Values.ExcludeDefault().All(e => !e.NotAnalyzed)) {
+                            break; // Now all modules are analyzed.    
                         }
-                        if (_currentSession != null || _nextSession != null) {
-                            return false; // New sessions were created
+                        if (_nextSession != null || _currentSession?.IsCompleted == false) {
+                            return false; // New sessions were created    
                         }
                     }
                 }
@@ -243,7 +244,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             _analysisCompleteEvent.Set();
             AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
-            
             return true;
         }
 
@@ -253,10 +253,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin, dependencies);
+
             lock (_syncObj) {
                 if (_version >= graphVersion) {
                     return;
                 }
+
                 _version = graphVersion;
                 _currentSession?.Cancel();
             }
@@ -375,14 +377,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return entry;
                 }
 
-                if (module.ModuleType == ModuleType.Specialized) {
-                    entry = new PythonAnalyzerEntry(new CachedAnalysis((IDocument)module, _services));
-                } else {
-                    entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
-                    _analysisCompleteEvent.Reset();
-                }
-
+                var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
+                entry = new PythonAnalyzerEntry(emptyAnalysis);
                 _analysisEntries[key] = entry;
+                _analysisCompleteEvent.Reset();
                 return entry;
             }
         }

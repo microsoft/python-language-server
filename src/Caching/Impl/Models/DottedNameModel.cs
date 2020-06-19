@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,14 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Values;
+using System;
 
-namespace Microsoft.Python.Analysis.Analyzer.Handlers {
-    internal interface IImportedVariableHandler {
-        IEnumerable<string> GetMemberNames(PythonVariableModule variableModule);
-        IVariable GetVariable(in PythonVariableModule module, in string name);
-        void EnsureModule(in PythonVariableModule module);
+namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
+    internal sealed class DottedNameModel {
+        public string[] NameParts { get; set; }
     }
 }

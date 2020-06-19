@@ -48,49 +48,23 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected override IPythonModule CreateModule(string name) {
-            if (!TryCreateStubModule(name, out var module)) {
-                return null;
-            }
-
-            Analyzer.InvalidateAnalysis(module);
-            return module;
-
-        }
-
-        private bool TryCreateStubModule(string name, out IPythonModule module) {
-            module = null;
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport != null) {
                 if (moduleImport.IsCompiled) {
                     Log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
-                    return false;
+                    return null;
                 }
-
-                module = new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, Services);
-                return true;
+                return new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, Services);
             }
 
             var i = name.IndexOf('.');
             if (i == 0) {
                 Debug.Fail("Invalid module name");
-                return false;
+                return null;
             }
 
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => FileSystem.FileExists(p));
-            if (stubPath != null) {
-                module = new StubPythonModule(name, stubPath, true, Services);
-                return true;
-            } 
-            return false;
-        }
-
-        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken = default) {
-            foreach (var moduleRef in Modules.Values) {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (moduleRef.Value != null) {
-                    yield return moduleRef.Value;
-                }
-            }
+            return stubPath != null ? new StubPythonModule(name, stubPath, true, Services) : null;
         }
 
         public Task ReloadAsync(CancellationToken cancellationToken = default) {

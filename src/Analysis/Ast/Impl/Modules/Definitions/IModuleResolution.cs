@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -45,11 +44,5 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Reloads all modules. Typically after installation or removal of packages.
         /// </summary>
         Task ReloadAsync(CancellationToken token = default);
-
-        /// <summary>
-        /// Returns collection of all currently imported modules.
-        /// </summary>
-        /// <param name="cancellationToken"></param>
-        IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken = default);
     }
 }

@@ -23,6 +23,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
         ImmutableArray<TValue> AffectedValues { get; }
         int Version { get; }
         int Remaining { get; }
-        Task<IDependencyChainNode> GetNextAsync(CancellationToken cancellationToken);
+        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
     }
 }

@@ -14,10 +14,13 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonPropertyType : PythonType, IPythonPropertyType {
+        private IPythonFunctionOverload _getter;
+
         public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
             : this(fd.Name, location, fd.GetDocumentation(), declaringType, isAbstract) {
             declaringType.DeclaringModule.AddAstNode(this, fd);
@@ -40,13 +43,19 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsReadOnly => true;
         public IPythonType DeclaringType { get; }
 
-        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-                => Getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
+        public string Description {
+            get {
+                var typeName = ReturnType?.GetPythonType()?.Name;
+                return typeName != null ? Resources.PropertyOfType.FormatUI(typeName) : Resources.PropertyOfUnknownType;
+            }
+        }
 
-        public IMember ReturnType => Getter?.Call(ArgumentSet.WithoutContext, DeclaringType);
+        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
+                => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
+
+        public IMember ReturnType => _getter?.Call(ArgumentSet.WithoutContext, DeclaringType);
         #endregion
 
-        internal void AddOverload(PythonFunctionOverload overload) => Getter = overload;
-        internal PythonFunctionOverload Getter { get; private set; }
+        internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
     }
 }

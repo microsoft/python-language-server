@@ -160,7 +160,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 interpreterPath: interpeterPath,
                 version: version
             );
-            _services.AddService(new ModuleDatabase(_services));
+            //_services.AddService(new ModuleDatabase(_services));
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;

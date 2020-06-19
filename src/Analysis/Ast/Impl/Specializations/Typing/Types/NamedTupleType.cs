@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonType
         public override string Name => _name;
-        public override string QualifiedName => $"{DeclaringModule.Name}:{Name}";
+        public override string QualifiedName => $"{DeclaringModule.Name}:{Name}"; // Named tuple name is a type name as class.
         public override bool IsSpecialized => true;
         public override string Documentation { get; }
         #endregion

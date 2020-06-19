@@ -75,7 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.IsUnknown()) {
                     continue;
                 }
-
                 // If stub says 'Any' but we have better type, keep the current type.
                 if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
@@ -85,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var sourceType = sourceVar?.Value.GetPythonType();
 
                 if (sourceVar?.Source == VariableSource.Import &&
-                    sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
+                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
                     // Keep imported types as they are defined in the library. For example,
                     // 'requests' imports NullHandler as 'from logging import NullHandler'.
                     // But 'requests' also declares NullHandler in its stub (but not in the main code)
@@ -298,7 +297,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Consider that 'email.headregistry' stub has DataHeader declaring 'datetime'
             // property of type 'datetime' from 'datetime' module. We don't want to modify
             // datetime type and change it's location to 'email.headregistry'.
-            if (stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
+            if(stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
                 return;
             }
 
@@ -348,7 +347,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// or location of unrelated types such as coming from the base object type.
         /// </remarks>
         private bool IsFromThisModuleOrSubmodules(IPythonType type) {
-            if (type.IsUnknown()) {
+            if(type.IsUnknown()) {
                 return false;
             }
             var thisModule = _eval.Module;

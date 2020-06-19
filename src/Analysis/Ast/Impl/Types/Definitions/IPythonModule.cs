@@ -65,6 +65,11 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonModule PrimaryModule { get; }
 
         /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        bool IsPersistent { get; }
+
+        /// <summary>
         /// Defines if module belongs to Typeshed and hence resolved
         /// via typeshed module resolution service.
         /// </summary>

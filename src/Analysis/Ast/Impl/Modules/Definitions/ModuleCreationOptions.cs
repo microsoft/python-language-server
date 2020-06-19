@@ -49,6 +49,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public IPythonModule Stub { get; set; }
 
         /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; set; }
+
+        /// <summary>
         /// Defines if module belongs to Typeshed and hence resolved
         /// via typeshed module resolution service.
         /// </summary>

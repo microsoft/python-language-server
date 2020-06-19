@@ -27,6 +27,7 @@ using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -76,13 +77,14 @@ namespace Microsoft.Python.Analysis.Modules {
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isTypeshed, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, bool isTypeshed, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
                 Stub = stub,
-                IsTypeshed = isTypeshed
+                IsTypeshed = isTypeshed,
+                IsPersistent = isPersistent
             }, services) { }
 
         internal PythonModule(ModuleCreationOptions creationOptions, IServiceContainer services)
@@ -108,6 +110,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ModuleState = ModuleState.Analyzed;
             }
 
+            IsPersistent = creationOptions.IsPersistent;
             IsTypeshed = creationOptions.IsTypeshed;
 
             InitializeContent(creationOptions.Content, 0);
@@ -150,8 +153,35 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
 
-        public virtual IEnumerable<string> GetMemberNames() => GlobalScope.GetExportableVariableNames();
+        public virtual IEnumerable<string> GetMemberNames() {
+            // drop imported modules and typing.
+            return GlobalScope.Variables
+                .Where(v => {
+                    // Instances are always fine.
+                    if (v.Value is IPythonInstance) {
+                        return true;
+                    }
 
+                    var valueType = v.Value?.GetPythonType();
+                    switch (valueType) {
+                        case PythonModule _:
+                        case IPythonFunctionType f when f.IsLambda():
+                            return false; // Do not re-export modules.
+                    }
+
+                    if (this is TypingModule) {
+                        return true; // Let typing module behave normally.
+                    }
+
+                    // Do not re-export types from typing. However, do export variables
+                    // assigned with types from typing. Example:
+                    //    from typing import Any # do NOT export Any
+                    //    x = Union[int, str] # DO export x
+                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
+                })
+                .Select(v => v.Name)
+                .ToArray();
+        }
         #endregion
 
         #region ILocatedMember
@@ -182,6 +212,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; }
 
         /// <summary>
         /// Defines if module belongs to Typeshed and hence resolved
@@ -323,7 +358,7 @@ namespace Microsoft.Python.Analysis.Modules {
             int version;
             Parser parser;
 
-            // Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name} ({ModuleType})");
+            //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
             lock (_syncObj) {
                 version = _buffer.Version;
@@ -379,6 +414,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+        public virtual IDependencyProvider DependencyProvider => new DependencyProvider(this, Services);
+
         public void NotifyAnalysisBegins() {
             lock (_syncObj) {
                 if (_updated) {
@@ -408,8 +445,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public ModuleWalker Analyze(PythonAst ast) {
-            var eval = new ExpressionEval(Services, this, ast);
-            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
+            var walker = new ModuleWalker(Services, this, ast, CancellationToken.None);
             ast.Walk(walker);
             walker.Complete();
             return walker;
@@ -502,12 +538,17 @@ namespace Microsoft.Python.Analysis.Modules {
                     Parse();
                 }
             }
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         private void SetOrLoadContent(string content) {
             if (ModuleState < ModuleState.Loading) {
                 try {
-                    content = content ?? LoadContent();
+                    if (IsPersistent) {
+                        content = string.Empty;
+                    } else {
+                        content = content ?? LoadContent();
+                    }
                     _buffer.SetContent(content);
                     ModuleState = ModuleState.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }

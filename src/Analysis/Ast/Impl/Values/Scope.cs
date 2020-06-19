@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -34,8 +33,6 @@ namespace Microsoft.Python.Analysis.Values {
         private Dictionary<ScopeStatement, Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
-            Check.ArgumentNotNull(nameof(module), module);
-
             OuterScope = outerScope;
             Module = module;
             if (node != null) {
@@ -52,7 +49,6 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IReadOnlyList<IScope> Children => _childScopes?.Values.ToArray() ?? Array.Empty<IScope>();
         public IScope GetChildScope(ScopeStatement node) => _childScopes != null && _childScopes.TryGetValue(node, out var s) ? s : null;
-
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
@@ -96,7 +92,8 @@ namespace Microsoft.Python.Analysis.Values {
             => (_imported ?? (_imported = new VariableCollection())).DeclareVariable(name, value, VariableSource.Import, location);
         #endregion
 
-        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new Dictionary<ScopeStatement, Scope>()))[s.Node] = s;
+        internal void AddChildScope(Scope s) 
+            => (_childScopes ?? (_childScopes = new Dictionary<ScopeStatement, Scope>()))[s.Node] = s;
 
         internal void ReplaceVariable(IVariable v) {
             VariableCollection.RemoveVariable(v.Name);
@@ -114,7 +111,7 @@ namespace Microsoft.Python.Analysis.Values {
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
-            DeclareBuiltinVariable("__name__", strType, location);
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, location);
 
             if (Node is FunctionDefinition) {
                 var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
@@ -131,8 +128,7 @@ namespace Microsoft.Python.Analysis.Values {
                 DeclareBuiltinVariable("__self__", objType, location);
             }
         }
-
-        protected void DeclareBuiltinVariable(string name, IPythonType type, Location location) 
+        protected void DeclareBuiltinVariable(string name, IPythonType type, Location location)
             => VariableCollection.DeclareVariable(name, type, VariableSource.Builtin, location);
     }
 }

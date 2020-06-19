@@ -19,7 +19,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class TypeNames {
@@ -27,36 +26,27 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Constructs persistent member name based on the member and the current module.
         /// Persistent name contains complete information for the member restoration code.
         /// </summary>
-        public static string GetPersistentQualifiedName(this IMember m, IServiceContainer services) {
+        public static string GetPersistentQualifiedName(this IMember m) {
             var t = m.GetPythonType();
-            string name = null;
             if (!t.IsUnknown()) {
                 switch (m) {
                     case IPythonInstance _: // constants and strings map here.
-                        name = $"i:{t.QualifiedName}";
-                        break;
+                        return $"i:{t.QualifiedName}";
                     case IBuiltinsPythonModule b:
                         return $"b:{b.QualifiedName}";
                     case PythonVariableModule vm:
-                        name = $"p:{vm.QualifiedName}";
-                        break;
+                        return $"p:{vm.QualifiedName}";
                     case IPythonModule mod:
-                        name = $"m:{mod.QualifiedName}";
-                        break;
+                        return $"m:{mod.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
                         return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.QualifiedName)}";
                     case IPythonType pt:
-                        name = $"t:{pt.QualifiedName}";
-                        break;
+                        return $"t:{pt.QualifiedName}";
                     case null:
                         break;
                 }
             }
-
-            if (name == null || t.DeclaringModule.ModuleType == ModuleType.Builtins) {
-                return name;
-            }
-            return $"{name}${t.DeclaringModule.GetUniqueId(services)}";
+            return null;
         }
 
         /// <summary>
@@ -69,12 +59,6 @@ namespace Microsoft.Python.Analysis.Caching {
             parts = new QualifiedNameParts();
             if (string.IsNullOrEmpty(qualifiedName)) {
                 return false;
-            }
-
-            var index = qualifiedName.IndexOf('$');
-            if (index > 0) {
-                parts.ModuleId = qualifiedName.Substring(index + 1);
-                qualifiedName = qualifiedName.Substring(0, index);
             }
 
             GetObjectTypeFromPrefix(qualifiedName, ref parts, out var prefixOffset);
@@ -118,6 +102,7 @@ namespace Microsoft.Python.Analysis.Caching {
                     default:
                         parts.ModuleName = typeName;
                         parts.MemberNames = Array.Empty<string>();
+                        DetermineModuleType(ref parts);
                         break;
                 }
                 return;

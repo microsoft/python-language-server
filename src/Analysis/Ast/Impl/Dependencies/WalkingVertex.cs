@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core.Diagnostics;
@@ -20,6 +21,8 @@ using Microsoft.Python.Core.Diagnostics;
 namespace Microsoft.Python.Analysis.Dependencies {
     [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
     internal sealed class WalkingVertex<TKey, TValue> {
+        public static Comparison<WalkingVertex<TKey, TValue>> FirstPassIncomingComparison { get; } = (v1, v2) => v1.FirstPass._incomingCount.CompareTo(v2.FirstPass._incomingCount);
+
         private readonly List<WalkingVertex<TKey, TValue>> _outgoing;
         private bool _isSealed;
         private int _incomingCount;
@@ -33,21 +36,18 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public bool HasOnlyWalkedIncoming => _walkedIncomingCount == 0;
         public bool HasMissingDependencies { get; private set; }
 
+        public WalkingVertex<TKey, TValue> FirstPass { get; }
+        public WalkingVertex<TKey, TValue> SecondPass { get; private set; }
+
         public bool IsInLoop => LoopNumber >= 0;
 
-        public string DebuggerDisplay => DependencyVertex?.DebuggerDisplay ?? "Loop node";
+        public string DebuggerDisplay => DependencyVertex.DebuggerDisplay;
 
-        public WalkingVertex(DependencyVertex<TKey, TValue> vertex) {
+        public WalkingVertex(DependencyVertex<TKey, TValue> vertex, WalkingVertex<TKey, TValue> firstPass = null) {
             DependencyVertex = vertex;
+            FirstPass = firstPass;
             Index = -1;
-            LoopNumber = -1;
-            _outgoing = new List<WalkingVertex<TKey, TValue>>();
-        }
-
-        public WalkingVertex(int loopNumber) {
-            DependencyVertex = default;
-            Index = -1;
-            LoopNumber = loopNumber;
+            LoopNumber = firstPass?.LoopNumber ?? -1;
             _outgoing = new List<WalkingVertex<TKey, TValue>>();
         }
 
@@ -81,6 +81,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _outgoing.RemoveAt(index);
             outgoingVertex._incomingCount--;
             outgoingVertex._walkedIncomingCount--;
+        }
+
+        public WalkingVertex<TKey, TValue> CreateSecondPassVertex() {
+            CheckNotSealed();
+
+            SecondPass = new WalkingVertex<TKey, TValue>(DependencyVertex, this);
+            return SecondPass;
         }
 
         public void Seal() => _isSealed = true;

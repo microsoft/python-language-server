@@ -19,20 +19,22 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{" + nameof(Name) + "}")]
     internal class PythonType : LocatedMember, IPythonType {
+        private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
+        private bool _readonly;
 
-        protected object MembersLock { get; } = new object();
         protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
 
         private Dictionary<string, IMember> WritableMembers =>
             _members ?? (_members = new Dictionary<string, IMember>());
 
-        public PythonType(string name, Location location, string documentation, BuiltinTypeId typeId = BuiltinTypeId.Unknown)
+        public PythonType(string name, Location location, string documentation, BuiltinTypeId typeId = BuiltinTypeId.Unknown) 
             : this(name, location, typeId) {
             BaseName = name ?? throw new ArgumentNullException(nameof(name));
             Documentation = documentation;
@@ -86,19 +88,8 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IMemberContainer
-
-        public virtual IMember GetMember(string name) {
-            lock (MembersLock) {
-                return Members.TryGetValue(name, out var member) ? member : null;
-            }
-        }
-
-        public virtual IEnumerable<string> GetMemberNames() {
-            lock (MembersLock) {
-                return Members.Keys.ToArray();
-            }
-        }
-
+        public virtual IMember GetMember(string name) => Members.TryGetValue(name, out var member) ? member : null;
+        public virtual IEnumerable<string> GetMemberNames() => Members.Keys;
         #endregion
 
         internal bool TrySetTypeId(BuiltinTypeId typeId) {
@@ -112,25 +103,29 @@ namespace Microsoft.Python.Analysis.Types {
         internal virtual void SetDocumentation(string documentation) => Documentation = documentation;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
-            lock (MembersLock) {
-                foreach (var v in variables.OfType<Variable>()) {
-                    var hasMember = Members.ContainsKey(v.Name);
-                    if (overwrite || !hasMember) {
-                        // If variable holds function or a class, use value as member. 
-                        // If it holds an instance, use the variable itself (i.e. it is a data member).
-                        WritableMembers[v.Name] = v.Value;
-                    }
-                    if (hasMember) {
-                        v.IsClassMember = true;
+            lock (_lock) {
+                if (!_readonly) {
+                    foreach (var v in variables.OfType<Variable>()) {
+                        var hasMember = Members.ContainsKey(v.Name);
+                        if (overwrite || !hasMember) {
+                            // If variable holds function or a class, use value as member. 
+                            // If it holds an instance, use the variable itself (i.e. it is a data member).
+                            WritableMembers[v.Name] = v.Value;
+                        }
+                        if (hasMember) {
+                            v.IsClassMember = true;
+                        }
                     }
                 }
             }
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
-            lock (MembersLock) {
-                foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
-                    WritableMembers[kv.Key] = kv.Value;
+            lock (_lock) {
+                if (!_readonly) {
+                    foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
+                        WritableMembers[kv.Key] = kv.Value;
+                    }
                 }
             }
         }
@@ -144,22 +139,24 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal IMember AddMember(string name, IMember member, bool overwrite) {
-            lock (MembersLock) {
-                if (overwrite || !Members.ContainsKey(name)) {
-                    WritableMembers[name] = member is IVariable v ? v.Value : member;
+            lock (_lock) {
+                if (!_readonly) {
+                    if (overwrite || !Members.ContainsKey(name)) {
+                        WritableMembers[name] = member;
+                    }
                 }
                 return member;
             }
         }
 
-        internal bool IsHidden => ContainsMember("__hidden__");
-
-        protected bool ContainsMember(string name) {
-            lock (MembersLock) {
-                return Members.ContainsKey(name);
+        internal void MakeReadOnly() {
+            lock (_lock) {
+                _readonly = true;
             }
         }
 
+        internal bool IsHidden => ContainsMember("__hidden__");
+        protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IPythonType UnknownType => DeclaringModule.Interpreter.UnknownType;
     }
 }

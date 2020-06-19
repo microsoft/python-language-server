@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -30,15 +31,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// Module unique id that includes version.
         /// </summary>
         public string UniqueId { get; set; }
-        public string FilePath { get; set; }
+
         public string Documentation { get; set; }
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
         public TypeVarModel[] TypeVars { get; set; }
         public NamedTupleModel[] NamedTuples { get; set; }
-        //public SubmoduleModel[] SubModules { get; set; }
-
         /// <summary>
         /// Collection of new line information for conversion of linear spans
         /// to line/columns in navigation to member definitions and references.
@@ -50,12 +49,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
-        [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
-        [NonSerialized] private object _modelCacheLock = new object();
+        public ImportModel[] Imports { get; set; }
+        public FromImportModel[] FromImports { get; set; }
+        public ImportModel[] StubImports { get; set; }
+        public FromImportModel[] StubFromImports { get; set; }
 
-        /// <summary>
-        /// Constructs module persistent model from analysis.
-        /// </summary>
+        [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
+
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingLevel options) {
             var uniqueId = analysis.Document.GetUniqueId(services, options);
             if (uniqueId == null) {
@@ -68,19 +68,23 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var classes = new Dictionary<string, ClassModel>();
             var typeVars = new Dictionary<string, TypeVarModel>();
             var namedTuples = new Dictionary<string, NamedTupleModel>();
-            //var subModules = new Dictionary<string, SubmoduleModel>();
-
-            foreach (var v in analysis.Document.GetMemberNames()
-                .Select(x => analysis.GlobalScope.Variables[x]).ExcludeDefault()) {
+            // Go directly through variables which names are listed in GetMemberNames
+            // as well as variables that are declarations.
+            var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
+            foreach (var v in analysis.GlobalScope.Variables
+                .Where(v => exportedNames.Contains(v.Name) ||
+                            v.Source == VariableSource.Declaration ||
+                            v.Source == VariableSource.Builtin ||
+                            v.Source == VariableSource.Generic)) {
 
                 if (v.Value is IGenericTypeParameter && !typeVars.ContainsKey(v.Name)) {
-                    typeVars[v.Name] = TypeVarModel.FromGeneric(v, services);
+                    typeVars[v.Name] = TypeVarModel.FromGeneric(v);
                     continue;
                 }
 
                 switch (v.Value) {
                     case ITypingNamedTupleType nt:
-                        namedTuples[v.Name] = new NamedTupleModel(nt, services);
+                        namedTuples[nt.Name] = new NamedTupleModel(nt);
                         continue;
                     case IPythonFunctionType ft when ft.IsLambda():
                         // No need to persist lambdas.
@@ -91,7 +95,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                         //    x = type(func)
                         break;
                     case IPythonFunctionType ft:
-                        var fm = GetFunctionModel(analysis, v, ft, services);
+                        var fm = GetFunctionModel(analysis, v, ft);
                         if (fm != null && !functions.ContainsKey(ft.Name)) {
                             functions[ft.Name] = fm;
                             continue;
@@ -103,7 +107,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
-                            classes[cls.Name] = new ClassModel(cls, services);
+                            classes[cls.Name] = new ClassModel(cls);
                             continue;
                         }
                         break;
@@ -111,62 +115,102 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 // Do not re-declare classes and functions as variables in the model.
                 if (!variables.ContainsKey(v.Name)) {
-                    variables[v.Name] = VariableModel.FromVariable(v, services);
+                    variables[v.Name] = VariableModel.FromVariable(v);
                 }
             }
+
+            // Take dependencies from imports. If module has stub we should also take
+            // dependencies from there since persistent state is based on types that
+            // are combination of stub and the module. Sometimes stub may import more
+            // and we must make sure dependencies are restored before the module.
+            var primaryDependencyWalker = new DependencyWalker(analysis.Ast);
+            var stubDependencyWalker = analysis.Document.Stub != null ? new DependencyWalker(analysis.Document.Stub.Analysis.Ast) : null;
+            var stubImports = stubDependencyWalker?.Imports ?? Enumerable.Empty<ImportModel>();
+            var stubFromImports = stubDependencyWalker?.FromImports ?? Enumerable.Empty<FromImportModel>();
 
             return new ModuleModel {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,
                 Name = analysis.Document.Name,
                 QualifiedName = analysis.Document.QualifiedName,
-                FilePath = analysis.Document.FilePath,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
                 Classes = classes.Values.ToArray(),
                 TypeVars = typeVars.Values.ToArray(),
                 NamedTuples = namedTuples.Values.ToArray(),
-                //SubModules = subModules.Values.ToArray(),
                 NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
                     EndIndex = l.EndIndex,
                     Kind = l.Kind
                 }).ToArray(),
-                FileSize = analysis.Ast.EndIndex
+                FileSize = analysis.Ast.EndIndex,
+                Imports = primaryDependencyWalker.Imports.ToArray(),
+                FromImports = primaryDependencyWalker.FromImports.ToArray(),
+                StubImports = stubImports.ToArray(),
+                StubFromImports = stubFromImports.ToArray()
             };
         }
 
-        private static FunctionModel GetFunctionModel(IDocumentAnalysis analysis, IVariable v, IPythonFunctionType f, IServiceContainer services) {
+        private static FunctionModel GetFunctionModel(IDocumentAnalysis analysis, IVariable v, IPythonFunctionType f) {
             if (v.Source == VariableSource.Import && !f.DeclaringModule.Equals(analysis.Document) && !f.DeclaringModule.Equals(analysis.Document.Stub)) {
                 // It may be that the function is from a child module via import.
                 // For example, a number of functions in 'os' are imported from 'nt' on Windows via
                 // star import. Their stubs, however, come from 'os' stub. The function then have declaring
                 // module as 'nt' rather than 'os' and 'nt' does not have a stub. In this case use function
                 // model like if function was declared in 'os'.
-                return new FunctionModel(f, services);
+                return new FunctionModel(f);
             }
 
             if (f.DeclaringModule.Equals(analysis.Document) || f.DeclaringModule.Equals(analysis.Document.Stub)) {
-                return new FunctionModel(f, services);
+                return new FunctionModel(f);
             }
             return null;
         }
-        
-        public override MemberModel GetModel(string name) {
-            lock (_modelCacheLock) {
-                if (_modelCache == null) {
-                    _modelCache = new Dictionary<string, MemberModel>();
-                    foreach (var m in GetMemberModels()) {
-                        Debug.Assert(!_modelCache.ContainsKey(m.Name));
-                        _modelCache[m.Name] = m;
-                    }
-                }
 
-                return _modelCache.TryGetValue(name, out var model) ? model : null;
+        public override MemberModel GetModel(string name) {
+            if (_modelCache == null) {
+                var models = TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
+                _modelCache = new Dictionary<string, MemberModel>();
+                foreach (var m in models) {
+                    Debug.Assert(!_modelCache.ContainsKey(m.Name));
+                    _modelCache[m.Name] = m;
+                }
             }
+            return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
 
-        protected override IEnumerable<MemberModel> GetMemberModels() 
-            => TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+
+        private sealed class DependencyWalker : PythonWalker {
+            public List<ImportModel> Imports { get; } = new List<ImportModel>();
+            public List<FromImportModel> FromImports { get; } = new List<FromImportModel>();
+
+            public DependencyWalker(PythonAst ast) {
+                ast.Walk(this);
+            }
+
+            public override bool Walk(ImportStatement import) {
+                var model = new ImportModel {
+                    ForceAbsolute = import.ForceAbsolute,
+                    ModuleNames = import.Names.Select(mn => new DottedNameModel {
+                        NameParts = mn.Names.Select(nex => nex.Name).ToArray()
+                    }).ToArray()
+                };
+                Imports.Add(model);
+                return false;
+            }
+
+            public override bool Walk(FromImportStatement fromImport) {
+                var model = new FromImportModel {
+                    ForceAbsolute = fromImport.ForceAbsolute,
+                    RootNames = fromImport.Root.Names.Select(n => n.Name).ToArray(),
+                    MemberNames = fromImport.Names.Select(n => n.Name).ToArray(),
+                    DotCount = fromImport.Root is RelativeModuleName rn ? rn.DotCount : 0
+                };
+                FromImports.Add(model);
+                return false;
+            }
+        }
     }
 }

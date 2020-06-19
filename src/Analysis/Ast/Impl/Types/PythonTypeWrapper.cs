@@ -60,16 +60,10 @@ namespace Microsoft.Python.Analysis.Types {
             _builtinTypeId = builtinTypeId;
         }
 
-        protected PythonTypeWrapper() { }
-        protected void SetInnerType(IPythonType innerType) {
-            _innerType = innerType;
-            DeclaringModule = _innerType.DeclaringModule;
-        }
-
         #region IPythonType
         public virtual string Name => _typeName ?? InnerType.Name;
         public virtual string QualifiedName => _typeName != null ? $"{DeclaringModule.Name}:{_typeName}" : InnerType.QualifiedName;
-        public IPythonModule DeclaringModule { get; private set; }
+        public IPythonModule DeclaringModule { get; }
         public virtual string Documentation => _documentation ?? InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual PythonMemberType MemberType => InnerType.MemberType;

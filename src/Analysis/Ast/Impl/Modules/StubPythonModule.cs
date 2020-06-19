@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     internal class StubPythonModule : CompiledPythonModule {
         public StubPythonModule(string moduleName, string stubPath, bool isTypeshed, IServiceContainer services)
-            : base(moduleName, ModuleType.Stub, stubPath, null, isTypeshed, services) {
+            : base(moduleName, ModuleType.Stub, stubPath, null, false, isTypeshed, services) {
         }
 
         protected override string LoadContent() {

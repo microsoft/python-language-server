@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -125,19 +124,9 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(args.Eval?.Module, this, args, default);
+                var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args, default);
                 if (!rt.IsUnknown()) {
                     return rt;
-                }
-                if (StaticReturnValue == null && !string.IsNullOrEmpty(_returnDocumentation) && FunctionDefinition?.ReturnAnnotation != null) {
-                    // There is return documentation but no static return value.
-                    // This may happen if function is inside module circular
-                    // dependency loop. Try and re-evaluate now.
-                    var returnValue = FunctionEvaluator.GetReturnValueFromAnnotation(args.Eval as ExpressionEval, FunctionDefinition.ReturnAnnotation);
-                    if (returnValue != null) {
-                        SetReturnValue(returnValue, true);
-                        return returnValue;
-                    }
                 }
             }
 

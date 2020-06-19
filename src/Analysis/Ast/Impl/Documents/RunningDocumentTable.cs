@@ -85,7 +85,6 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="filePath">Optional file path, if different from the URI.</param>
         public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
             bool justOpened;
-            var created = false;
             IDocument document;
             lock (_lock) {
                 var entry = FindDocument(uri);
@@ -106,14 +105,9 @@ namespace Microsoft.Python.Analysis.Documents {
                         ModuleType = moduleType
                     };
                     entry = CreateDocument(mco);
-                    created = true;
                 }
                 justOpened = TryOpenDocument(entry, content);
                 document = entry.Document;
-            }
-
-            if (created) {
-                _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             }
 
             if (justOpened) {
@@ -247,10 +241,10 @@ namespace Microsoft.Python.Analysis.Documents {
             IDocument document;
             switch (mco.ModuleType) {
                 case ModuleType.Compiled when TryAddModulePath(mco):
-                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, mco.IsTypeshed, _services);
+                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, mco.IsPersistent, mco.IsTypeshed, _services);
                     break;
                 case ModuleType.CompiledBuiltin:
-                    document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
+                    document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, mco.IsPersistent, _services);
                     break;
                 case ModuleType.User:
                     TryAddModulePath(mco);

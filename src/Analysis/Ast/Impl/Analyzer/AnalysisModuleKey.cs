@@ -40,6 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Name = name;
             FilePath = filePath;
             IsTypeshed = isTypeshed;
+            IsNonUserAsDocument = isNonUserAsDocument;
         }
 
         public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, true);
@@ -69,6 +70,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override string ToString() => $"{Name}({FilePath})";
+
+        public bool IsNonUserAsDocument { get; }
 
         private static bool IsNonUserAsDocumentModule(IPythonModule module)
             => (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument document && document.IsOpen;

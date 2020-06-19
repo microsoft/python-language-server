@@ -50,10 +50,8 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 
-            using (var dbModule = new PythonDbModule(model, null, Services)) {
-                dbModule.Construct(model);
-                dbModule.Should().HaveSameMembersAs(builtins);
-            }
+            var dbModule = new PythonDbModule(model, null, Services);
+            dbModule.Should().HaveSameMembersAs(builtins);
         }
 
         [TestMethod, Priority(0)]
@@ -304,7 +302,7 @@ x = requests.get('microsoft.com')
             // Verify this looks like a version.
             new Version(u.Substring(open + 1, u.IndexOf(')') - open - 1));
 
-            await CompareRestoreAsync(model, rq);
+            await CompareBaselineAndRestoreAsync(model, rq);
         }
 
         private async Task TestModule(string name) {
@@ -319,7 +317,7 @@ x = requests.get('microsoft.com')
             var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
             model.Should().NotBeNull($"Module {name} is either not installed or cannot be cached");
 
-            await CompareRestoreAsync(model, m);
+            await CompareBaselineAndRestoreAsync(model, m);
         }
     }
 }

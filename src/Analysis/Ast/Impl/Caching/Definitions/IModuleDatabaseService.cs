@@ -15,36 +15,34 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal interface IModuleDatabaseService: IModuleDatabaseCache {
         /// <summary>
-        /// Restores module from database.
+        /// Creates global scope from module persistent state.
+        /// Global scope is then can be used to construct module analysis.
         /// </summary>
-        IPythonModule RestoreModule(string moduleName, string modulePath, ModuleType moduleType);
+        /// <param name="module">Python module to restore analysis for.</param>
+        /// <param name="gs">Python module global scope.</param>
+        bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs);
+
+        /// <summary>
+        /// Retrieves dependencies from the module persistent state.
+        /// </summary>
+        /// <param name="module">Python module to restore analysis for.</param>
+        /// <param name="dp">Python module dependency provider.</param>
+        bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp);
 
         /// <summary>
         /// Writes module data to the database.
         /// </summary>
-        /// <param name="analysis">Document analysis</param>
-        /// <param name="immediate">
-        /// True if database should be written to disk immediately
-        /// as opposed to delaying writing until complete analysis event from the <see cref="IPythonAnalyzer"/>
-        /// </param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default);
+        Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
-        bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType);
-    }
-
-    internal static class ModuleDatabaseExtensions {
-        public static bool ModuleExistsInStorage(this IModuleDatabaseService dbs, IPythonModule module)
-            => dbs.ModuleExistsInStorage(module.Name, module.FilePath, module.ModuleType);
+        bool ModuleExistsInStorage(string moduleName, string filePath);
     }
 }

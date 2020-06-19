@@ -602,15 +602,13 @@ print(os_path.basename('a/b/c'))
 
             reference = ds.FindDefinition(analysis, new SourceLocation(4, 12), out _);
             reference.Should().NotBeNull();
-            var osPyPath = reference.uri.AbsolutePath;
-            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
 
             reference = ds.FindDefinition(analysis, new SourceLocation(5, 12), out _);
             reference.Should().NotBeNull();
-            reference.uri.AbsolutePath.Should().Be(osPyPath);
-            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
         }

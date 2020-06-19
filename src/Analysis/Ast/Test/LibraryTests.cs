@@ -80,8 +80,8 @@ x = requests.get('microsoft.com')
                 Assert.Inconclusive("'requests' package is not installed.");
             }
 
-            var r = analysis.Should().HaveVariable("x").OfType("Response")
-                .Which.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
+            var r = analysis.Should().HaveVariable("x").OfType("Response").Which;
+            r.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

@@ -32,7 +32,6 @@
     <ProjectReference Include="..\..\Analysis\Ast\Test\Microsoft.Python.Analysis.Tests.csproj" />
     <ProjectReference Include="..\..\Analysis\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
-    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.Caching.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Files\" />
