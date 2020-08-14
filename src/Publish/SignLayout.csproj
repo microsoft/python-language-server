@@ -54,7 +54,7 @@
       <FilesToSign Remove="@(FilesToSign)" />
       <FilesToSign Include="@(SignFiles)">
         <Authenticode Condition="%(Extension) == '.nupkg'">NuGet</Authenticode>
-        <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft</Authenticode>
+        <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft400</Authenticode>
         <StrongName Condition="%(Extension) != '.nupkg'">StrongName</StrongName> 
       </FilesToSign>
     </ItemGroup>
