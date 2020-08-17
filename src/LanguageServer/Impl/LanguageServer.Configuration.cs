@@ -43,16 +43,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 Debug.Assert(_initialized);
 
-                var settings = new LanguageServerSettings();
-
                 // https://github.com/microsoft/python-language-server/issues/915
                 // If token or settings are missing, assume defaults.
-                var rootSection = token?["settings"];
-                var pythonSection = rootSection?["python"];
+                var pythonSection = await GetPythonConfigurationAsync(cancellationToken);
                 if (pythonSection == null) {
                     return;
                 }
 
+                var settings = new LanguageServerSettings();
                 var autoComplete = pythonSection["autoComplete"];
                 settings.completion.showAdvancedMembers = GetSetting(autoComplete, "showAdvancedMembers", true);
                 settings.completion.addBrackets = GetSetting(autoComplete, "addBrackets", false);
