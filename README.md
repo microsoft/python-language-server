@@ -73,7 +73,7 @@ An example of a user configuration which sets these options:
 }
 ```
 
-Linting can also be controlled on an invidual line basis with a generalized `#noqa`. Lines with `#noqa` will have their diagnostic output suppressed.
+Linting can also be controlled on an individual line basis with a generalized `#noqa`. Lines with `#noqa` will have their diagnostic output suppressed.
 
 An example usage:
 
