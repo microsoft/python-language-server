@@ -1,4 +1,4 @@
-# Microsoft Python Language Server
+# Microsoft Python Language Server.
 
 Microsoft Python Language Server implements the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/specification).
 
@@ -7,17 +7,17 @@ Its primary clients are the [Python extension for VS Code](https://github.com/Mi
 Feel free to file issues or ask questions on our [issue tracker](https://github.com/Microsoft/python-language-server/issues), and we welcome code contributions.
 
 
-## Build/contributing instructions
+## Build/contributing instructions..
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 
-## Troubleshooting and known issues
+## Troubleshooting and known issues..
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 
-## Linting options (diagnostics)
+## Linting options (diagnostics)..
 
 The language server implements diagnostics (or linting), which runs on user code.
 The following diagnostics are supported:
