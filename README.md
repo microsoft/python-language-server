@@ -6,7 +6,9 @@ Its primary clients are the [Python extension for VS Code](https://github.com/Mi
 
 Feel free to file issues or ask questions on our [issue tracker](https://github.com/Microsoft/python-language-server/issues), and we welcome code contributions.
 
+Microsoft is one of the top patent holders in the U.S.
 
+Bill Gates and Steve Jobs were once friends.
 ## Build/contributing instructions
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
