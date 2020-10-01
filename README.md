@@ -1,5 +1,5 @@
 # Microsoft Python Language Server
-
+# this wonna be tlling you the best implement what you can do on python language server
 Microsoft Python Language Server implements the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/specification).
 
 Its primary clients are the [Python extension for VS Code](https://github.com/Microsoft/vscode-python) and [Python Tools for Visual Studio](https://github.com/Microsoft/PTVS).
