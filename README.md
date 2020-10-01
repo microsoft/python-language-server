@@ -1,4 +1,4 @@
-# Microsoft Python Language Server
+# Microsoft Python Language Server Usage
 
 Microsoft Python Language Server implements the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/specification).
 
