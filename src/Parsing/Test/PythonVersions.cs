@@ -26,11 +26,13 @@ namespace Microsoft.Python.Parsing.Tests {
         public static readonly InterpreterConfiguration Python36 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python37 = GetCPythonVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python38 = GetCPythonVersion(PythonLanguageVersion.V38, InterpreterArchitecture.x86);
+        public static readonly InterpreterConfiguration Python39 = GetCPythonVersion(PythonLanguageVersion.V39, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python27_x64 = GetCPythonVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python35_x64 = GetCPythonVersion(PythonLanguageVersion.V35, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python36_x64 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python37_x64 = GetCPythonVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python38_x64 = GetCPythonVersion(PythonLanguageVersion.V38, InterpreterArchitecture.x64);
+        public static readonly InterpreterConfiguration Python39_x64 = GetCPythonVersion(PythonLanguageVersion.V39, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda27 = GetAnacondaVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Anaconda27_x64 = GetAnacondaVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda36 = GetAnacondaVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
@@ -63,6 +65,7 @@ namespace Microsoft.Python.Parsing.Tests {
         public static InterpreterConfiguration Required_Python36X => Python36 ?? Python36_x64 ?? NotInstalled("v3.6");
         public static InterpreterConfiguration Required_Python37X => Python37 ?? Python37_x64 ?? NotInstalled("v3.7");
         public static InterpreterConfiguration Required_Python38X => Python38 ?? Python38_x64 ?? NotInstalled("v3.8");
+        public static InterpreterConfiguration Required_Python39X => Python39 ?? Python39_x64 ?? NotInstalled("v3.9");
 
         public static InterpreterConfiguration LatestAvailable => LatestAvailable3X ?? LatestAvailable2X;
 
