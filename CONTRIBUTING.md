@@ -18,7 +18,7 @@
 
 ```shell
 git clone https://github.com/Microsoft/python-language-server.git
-cd src/LanguageServer/Impl
+cd python-language-server/src/LanguageServer/Impl
 dotnet build
 ```
 
