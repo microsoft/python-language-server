@@ -169,44 +169,49 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var paths = ImmutableArray<string>.Empty;
             var set = false;
 
-            if (pythonSection != null) {
-                var autoComplete = pythonSection["autoComplete"];
-                var analysis = pythonSection["analysis"];
+            JToken autoComplete;
+            JToken analysis;
+            try {
+                autoComplete = pythonSection?["autoComplete"];
+                analysis = pythonSection?["analysis"];
+            } catch (Exception e) {
+                analysis = JToken.Parse("{ 'errors': [], 'warnings': [], 'information': [], 'disabled': [] }");
+                autoComplete = JToken.Parse("{ 'extraPaths': [] }");
+            }
 
-                // The values of these may not be null even if the value is "unset", depending on
-                // what the client uses as a default. Use null as a default anyway until the
-                // extension uses a null default (and/or extraPaths is dropped entirely).
-                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
-                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
-                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
-                var analayisAutoSearchPaths = GetSetting(analysis, "autoSearchPaths", true);
+            // The values of these may not be null even if the value is "unset", depending on
+            // what the client uses as a default. Use null as a default anyway until the
+            // extension uses a null default (and/or extraPaths is dropped entirely).
+            var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
+            var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
+            var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+            var analayisAutoSearchPaths = GetSetting(analysis, "autoSearchPaths", true);
 
-                if (analysisSearchPaths != null) {
-                    set = true;
-                    paths = analysisSearchPaths.ToImmutableArray();
-                } else if (autoCompleteExtraPaths != null) {
-                    set = true;
-                    paths = autoCompleteExtraPaths.ToImmutableArray();
-                }
+            if (analysisSearchPaths != null) {
+                set = true;
+                paths = analysisSearchPaths.ToImmutableArray();
+            } else if (autoCompleteExtraPaths != null) {
+                set = true;
+                paths = autoCompleteExtraPaths.ToImmutableArray();
+            }
 
-                if (analysisUsePYTHONPATH) {
-                    var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
-                    if (pythonpath != null) {
-                        var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
-                        var pythonpathPaths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
-                        if (pythonpathPaths.Length > 0) {
-                            paths = paths.AddRange(pythonpathPaths);
-                            set = true;
-                        }
+            if (analysisUsePYTHONPATH) {
+                var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
+                if (pythonpath != null) {
+                    var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
+                    var pythonpathPaths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                    if (pythonpathPaths.Length > 0) {
+                        paths = paths.AddRange(pythonpathPaths);
+                        set = true;
                     }
                 }
+            }
 
-                if (analayisAutoSearchPaths) {
-                    var fs = _services.GetService<IFileSystem>();
-                    var auto = AutoSearchPathFinder.Find(fs, _server.Root);
-                    paths = paths.AddRange(auto);
-                    set = true;
-                }
+            if (analayisAutoSearchPaths) {
+                var fs = _services.GetService<IFileSystem>();
+                var auto = AutoSearchPathFinder.Find(fs, _server.Root);
+                paths = paths.AddRange(auto);
+                set = true;
             }
 
             if (set) {
