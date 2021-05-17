@@ -16,8 +16,8 @@ steps:
     inputs:
       command: restore
       projects: |
-      src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
-      src/Publish/SignLayout.csproj
+        src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
+        src/Publish/SignLayout.csproj
       restoreDirectory: '$(Build.BinariesDirectory)'
 
   - task: MSBuild@1
