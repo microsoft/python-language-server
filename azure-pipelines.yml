@@ -16,11 +16,10 @@ pool:
   name: VSEngSS-MicroBuild2019
 
 jobs:
-- job: 'Build and publish'  
+- job: Build  
     strategy:
       matrix: '$(OSTarget)'
     steps:
-
     - task: MicroBuildSigningPlugin@3
       displayName: 'Install microbuild signing plugin'
       condition: notin(variables['Build.Reason'], 'PullRequest')
