@@ -1,6 +1,5 @@
 jobs: 
-  - 
-    job: 
+  - job: 
       displayName: "Build for $(OSTarget)"
       steps: 
         - 
