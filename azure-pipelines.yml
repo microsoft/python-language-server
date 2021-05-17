@@ -1,89 +1,49 @@
-jobs: 
-  - job: 
-      displayName: "Build for $(OSTarget)"
-      steps: 
-        - 
-          condition: "notin(variables['Build.Reason'], 'PullRequest')"
-          displayName: "Install microbuild signing plugin"
-          inputs: 
-            signType: Real
-            zipSources: false
-          task: MicroBuildSigningPlugin@3
-        - 
-          displayName: "Use .Net Core SDK 3.1.x"
-          inputs: 
-            version: 3.1.x
-          task: UseDotNet@2
-        - 
-          displayName: "dotnet restore"
-          inputs: 
-            command: restore
-            projects: |
-                src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
-                src/Publish/SignLayout.csproj
-            restoreDirectory: $(Build.BinariesDirectory)
-          task: DotNetCoreCLI@2
-        - 
-          condition: "notin(variables['Build.Reason'], 'PullRequest')"
-          displayName: "Sign assemblies"
-          inputs: 
-            configuration: $(BuildConfiguration)
-            msbuildArguments: "/p:OutputPath=$(Build.BinariesDirectory)\\out /p:SignServer=true /p:SignParser=true"
-            platform: $(BuildPlatform)
-            solution: src/Publish/SignLayout.csproj
-          task: MSBuild@1
-        - 
-          displayName: "NuGet pack language server"
-          inputs: 
-            basePath: $(Build.BinariesDirectory)/out
-            buildProperties: os=-$(OSTarget)
-            command: pack
-            packDestination: $(Build.ArtifactStagingDirectory)\packages
-            packagesToPack: src/LanguageServer/Impl/Python-Language-Server.nuspec
-            versionEnvVar: NugetPackageVersion
-            versioningScheme: byEnvVar
-          task: NuGetCommand@2
-        - 
-          displayName: "NuGet pack parsing"
-          inputs: 
-            basePath: $(Build.BinariesDirectory)/out
-            buildProperties: os=-$(OSTarget)
-            command: pack
-            packDestination: $(Build.ArtifactStagingDirectory)\packages
-            packagesToPack: src/Parsing/Impl/Microsoft-Python-Parsing.nuspec
-            versionEnvVar: NugetPackageVersion
-            versioningScheme: byEnvVar
-          task: NuGetCommand@2
-        - 
-          condition: "notin(variables['Build.Reason'], 'PullRequest')"
-          displayName: "Sign packages"
-          inputs: 
-            configuration: $(BuildConfiguration)
-            msbuildArguments: "/p:OutputPath=$(Build.ArtifactStagingDirectory)\\packages /p:SignPackage=true /p:Version=$(Build.BuildNumber)"
-            platform: $(BuildPlatform)
-            solution: src/Publish/SignLayout.csproj
-          task: MSBuild@1
-        - 
-          condition: "and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['OSTarget'], 'any'), notin(variables['Build.Reason'], 'PullRequest'))"
-          displayName: "NuGet publish parsing "
-          inputs: 
-            command: push
-            nuGetFeedType: external
-            packagesToPush: $(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg
-            publishFeedCredentials: rchiodo_nuget
-          task: NuGetCommand@2
-          timeoutInMinutes: 20
-        - 
-          condition: succeededOrFailed()
-          displayName: "Execute cleanup tasks"
-          task: MicroBuildCleanup@1
-      strategy: 
-        matrix: $(OSTarget)
+# Pipeline for publishing nuget packages
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+# build number format
 name: $(VersionMajorMinor)$(VersionPatchCounter)
-pool: 
-  name: VSEngSS-MicroBuild2019
-trigger: 
-  branches: 
-    include: 
+
+trigger:
+  branches:
+    include:
       - master
-      - azure-pipelines
+      - azure-pipelines 
+
+
+pool:
+  name: VSEngSS-MicroBuild2019
+
+# Need a job for win-x86,win-x64,osx-x64,linux-x64,any
+jobs:
+  - job: x86
+    displayName: "Build x86"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: win-x86
+  - job: x64
+    displayName: "Build x64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: win-x64
+  - job: DX64
+    displayName: "Build osxX64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: osx-x64
+  - job: LX64
+    displayName: "Build linuxX64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: linux-x64
+  - job: AnyCPU
+    displayName: "Build AnyCPU"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: any
