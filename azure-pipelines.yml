@@ -2,6 +2,9 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+# build number format
+name: $(VersionMajorMinor)$(VersionPatchCounter)
+
 trigger:
   branches:
     include:
@@ -11,10 +14,6 @@ trigger:
 
 pool:
   name: VSEngSS-MicroBuild2019
-
-variables:
-  - name: SigningType
-    value: Real
 
 steps:
 
