@@ -16,9 +16,10 @@ pool:
   name: VSEngSS-MicroBuild2019
 
 jobs:
-- job: Build  
+- job: 
+    displayName: 'Build for $(OSTarget)'
     strategy:
-      matrix: '$(OSTarget)'
+       matrix: $(OSTarget)    
     steps:
     - task: MicroBuildSigningPlugin@3
       displayName: 'Install microbuild signing plugin'
