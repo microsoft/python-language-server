@@ -1,97 +1,90 @@
-# Pipeline for publishing nuget packages
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
-# build number format
+jobs: 
+  - 
+    job: 
+      displayName: "Build for $(OSTarget)"
+      steps: 
+        - 
+          condition: "notin(variables['Build.Reason'], 'PullRequest')"
+          displayName: "Install microbuild signing plugin"
+          inputs: 
+            signType: Real
+            zipSources: false
+          task: MicroBuildSigningPlugin@3
+        - 
+          displayName: "Use .Net Core SDK 3.1.x"
+          inputs: 
+            version: 3.1.x
+          task: UseDotNet@2
+        - 
+          displayName: "dotnet restore"
+          inputs: 
+            command: restore
+            projects: |
+                src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
+                src/Publish/SignLayout.csproj
+            restoreDirectory: $(Build.BinariesDirectory)
+          task: DotNetCoreCLI@2
+        - 
+          condition: "notin(variables['Build.Reason'], 'PullRequest')"
+          displayName: "Sign assemblies"
+          inputs: 
+            configuration: $(BuildConfiguration)
+            msbuildArguments: "/p:OutputPath=$(Build.BinariesDirectory)\\out /p:SignServer=true /p:SignParser=true"
+            platform: $(BuildPlatform)
+            solution: src/Publish/SignLayout.csproj
+          task: MSBuild@1
+        - 
+          displayName: "NuGet pack language server"
+          inputs: 
+            basePath: $(Build.BinariesDirectory)/out
+            buildProperties: os=-$(OSTarget)
+            command: pack
+            packDestination: $(Build.ArtifactStagingDirectory)\packages
+            packagesToPack: src/LanguageServer/Impl/Python-Language-Server.nuspec
+            versionEnvVar: NugetPackageVersion
+            versioningScheme: byEnvVar
+          task: NuGetCommand@2
+        - 
+          displayName: "NuGet pack parsing"
+          inputs: 
+            basePath: $(Build.BinariesDirectory)/out
+            buildProperties: os=-$(OSTarget)
+            command: pack
+            packDestination: $(Build.ArtifactStagingDirectory)\packages
+            packagesToPack: src/Parsing/Impl/Microsoft-Python-Parsing.nuspec
+            versionEnvVar: NugetPackageVersion
+            versioningScheme: byEnvVar
+          task: NuGetCommand@2
+        - 
+          condition: "notin(variables['Build.Reason'], 'PullRequest')"
+          displayName: "Sign packages"
+          inputs: 
+            configuration: $(BuildConfiguration)
+            msbuildArguments: "/p:OutputPath=$(Build.ArtifactStagingDirectory)\\packages /p:SignPackage=true /p:Version=$(Build.BuildNumber)"
+            platform: $(BuildPlatform)
+            solution: src/Publish/SignLayout.csproj
+          task: MSBuild@1
+        - 
+          condition: "and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['OSTarget'], 'any'), notin(variables['Build.Reason'], 'PullRequest'))"
+          displayName: "NuGet publish parsing "
+          inputs: 
+            command: push
+            nuGetFeedType: external
+            packagesToPush: $(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg
+            publishFeedCredentials: rchiodo_nuget
+          task: NuGetCommand@2
+          timeoutInMinutes: 20
+        - 
+          condition: succeededOrFailed()
+          displayName: "Execute cleanup tasks"
+          task: MicroBuildCleanup@1
+      strategy: 
+        matrix: $(OSTarget)
 name: $(VersionMajorMinor)$(VersionPatchCounter)
-
-trigger:
-  branches:
-    include:
-      - master
-      - azure-pipelines 
-
-
-pool:
+pool: 
   name: VSEngSS-MicroBuild2019
-
-jobs:
-- job: 
-    displayName: 'Build for $(OSTarget)'
-    strategy:
-       matrix: $(OSTarget)    
-    steps:
-    - task: MicroBuildSigningPlugin@3
-      displayName: 'Install microbuild signing plugin'
-      condition: notin(variables['Build.Reason'], 'PullRequest')
-      inputs:
-        signType: 'Real'
-        zipSources: false
-
-    - task: UseDotNet@2
-      displayName: 'Use .Net Core SDK 3.1.x'
-      inputs:
-        version: 3.1.x
-
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet restore'
-      inputs:
-        command: restore
-        projects: |
-          src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
-          src/Publish/SignLayout.csproj
-        restoreDirectory: '$(Build.BinariesDirectory)'
-
-    - task: MSBuild@1
-      displayName: 'Sign assemblies'
-      condition: notin(variables['Build.Reason'], 'PullRequest')
-      inputs:
-        solution: src/Publish/SignLayout.csproj
-        platform: '$(BuildPlatform)'
-        configuration: '$(BuildConfiguration)'
-        msbuildArguments: '/p:OutputPath=$(Build.BinariesDirectory)\out /p:SignServer=true /p:SignParser=true'
-
-    - task: NuGetCommand@2
-      displayName: 'NuGet pack language server'
-      inputs:
-        command: pack
-        packagesToPack: 'src/LanguageServer/Impl/Python-Language-Server.nuspec'
-        packDestination: '$(Build.ArtifactStagingDirectory)\packages'
-        versioningScheme: byEnvVar
-        versionEnvVar: NugetPackageVersion
-        buildProperties: 'os=-$(OSTarget)'
-        basePath: '$(Build.BinariesDirectory)/out'
-
-    - task: NuGetCommand@2
-      displayName: 'NuGet pack parsing'
-      inputs:
-        command: pack
-        packagesToPack: 'src/Parsing/Impl/Microsoft-Python-Parsing.nuspec'
-        packDestination: '$(Build.ArtifactStagingDirectory)\packages'
-        versioningScheme: byEnvVar
-        versionEnvVar: NugetPackageVersion
-        buildProperties: 'os=-$(OSTarget)'
-        basePath: '$(Build.BinariesDirectory)/out'
-
-    - task: MSBuild@1
-      displayName: 'Sign packages'
-      condition: notin(variables['Build.Reason'], 'PullRequest')
-      inputs:
-        solution: src/Publish/SignLayout.csproj
-        platform: '$(BuildPlatform)'
-        configuration: '$(BuildConfiguration)'
-        msbuildArguments: '/p:OutputPath=$(Build.ArtifactStagingDirectory)\packages /p:SignPackage=true /p:Version=$(Build.BuildNumber)'
-
-    - task: NuGetCommand@2
-      displayName: 'NuGet publish parsing '
-      inputs:
-        command: push
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-        nuGetFeedType: external
-        publishFeedCredentials: 'rchiodo_nuget'
-      condition: and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['OSTarget'], 'any'), notin(variables['Build.Reason'], 'PullRequest')) 
-      timeoutInMinutes: 20
-
-    - task: MicroBuildCleanup@1
-      displayName: 'Execute cleanup tasks'
-      condition: succeededOrFailed()
+trigger: 
+  branches: 
+    include: 
+      - master
+      - azure-pipelines
