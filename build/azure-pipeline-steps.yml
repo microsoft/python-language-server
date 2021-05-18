@@ -20,6 +20,28 @@ steps:
         src/Publish/SignLayout.csproj
       restoreDirectory: '$(Build.BinariesDirectory)'
 
+  - task: DotNetCoreCLI@2
+    displayName: 'dotnet publish LanguageServer'
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
+      arguments: '-c $(BuildConfiguration) -r $(OSTarget) -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
+      zipAfterPublish: false
+      modifyOutputPath: false
+    condition: and(succeeded(), ne(variables['OSTarget'], 'any'))      
+
+  - task: DotNetCoreCLI@2
+    displayName: 'dotnet publish LanguageServer for Any'
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
+      arguments: '-c $(BuildConfiguration) -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
+      zipAfterPublish: false
+      modifyOutputPath: false
+    condition: and(succeeded(), eq(variables['OSTarget'], 'any'))
+
   - task: MSBuild@1
     displayName: 'Sign assemblies'
     condition: notin(variables['Build.Reason'], 'PullRequest')
