@@ -87,12 +87,11 @@ steps:
       configuration: '$(BuildConfiguration)'
       msbuildArguments: '/p:OutputPath=$(Build.ArtifactStagingDirectory)\packages /p:SignPackage=true /p:Version=$(Build.BuildNumber)'
 
-  - task: MicroBuildArchiveSymbols@1
+  - task: PublishSymbols@2
     inputs:
-      SymbolsFeatureName: 'MPLS'
-      SymbolsSymwebProject: 'VS'
-      SymbolsEmailContacts: 'ptvscore@microsoft.com'
-      SymbolsAgentPath: $(Build.BinariesDirectory)/out
+      SymbolsFolder: '$(Build.BinariesDirectory)'
+      SearchPattern: '**/out/**/*.pdb'
+      SymbolServerType: 'TeamServices'
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq('${{ parameters.OSTarget }}', 'any'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
 
   - task: NuGetCommand@2
