@@ -3,9 +3,6 @@ parameters:
   type: string
   default: 'win-x86'
 
-variables:
-   OSTarget: ${{ parameters.OSTarget }}
-
 steps:
   - task: MicroBuildSigningPlugin@3
     displayName: 'Install microbuild signing plugin'
@@ -34,10 +31,10 @@ steps:
       command: publish
       publishWebProjects: false
       projects: src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj
-      arguments: '-c $(BuildConfiguration) -r $(OSTarget) -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
+      arguments: '-c $(BuildConfiguration) -r ${{ parameters.OSTarget }} -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
       zipAfterPublish: false
       modifyOutputPath: false
-    condition: and(succeeded(), ne(variables['OSTarget'], 'any'))      
+    condition: and(succeeded(), ne(${{ parameters.OSTarget }}, 'any'))      
 
   - task: DotNetCoreCLI@2
     displayName: 'dotnet publish LanguageServer for Any'
@@ -48,7 +45,7 @@ steps:
       arguments: '-c $(BuildConfiguration) -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
       zipAfterPublish: false
       modifyOutputPath: false
-    condition: and(succeeded(), eq(variables['OSTarget'], 'any'))
+    condition: and(succeeded(), eq(${{ parameters.OSTarget }}, 'any'))
 
   - task: MSBuild@1
     displayName: 'Sign assemblies'
@@ -67,7 +64,7 @@ steps:
       packDestination: '$(Build.ArtifactStagingDirectory)\packages'
       versioningScheme: byEnvVar
       versionEnvVar: NugetPackageVersion
-      buildProperties: 'os=-$(OSTarget)'
+      buildProperties: 'os=-${{ parameters.OSTarget }}'
       basePath: '$(Build.BinariesDirectory)/out'
 
   - task: NuGetCommand@2
@@ -78,7 +75,7 @@ steps:
       packDestination: '$(Build.ArtifactStagingDirectory)\packages'
       versioningScheme: byEnvVar
       versionEnvVar: NugetPackageVersion
-      buildProperties: 'os=-$(OSTarget)'
+      buildProperties: 'os=-${{ parameters.OSTarget }}'
       basePath: '$(Build.BinariesDirectory)/out'
 
   - task: MSBuild@1
@@ -97,7 +94,7 @@ steps:
       packagesToPush: '$(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
       nuGetFeedType: external
       publishFeedCredentials: 'rchiodo_nuget'
-    condition: and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['OSTarget'], 'any'), notin(variables['Build.Reason'], 'PullRequest')) 
+    condition: and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(${{ parameters.OSTarget }}, 'any'), notin(variables['Build.Reason'], 'PullRequest')) 
     timeoutInMinutes: 20
 
   - task: MicroBuildCleanup@1
