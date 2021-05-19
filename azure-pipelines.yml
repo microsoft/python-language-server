@@ -1,0 +1,49 @@
+# Pipeline for publishing nuget packages
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+# build number format
+name: $(VersionMajorMinor)$(VersionPatchCounter)
+
+trigger:
+  branches:
+    include:
+      - master
+      - azure-pipelines 
+
+
+pool:
+  name: VSEngSS-MicroBuild2019
+
+# Need a job for win-x86,win-x64,osx-x64,linux-x64,any
+jobs:
+  - job: x86
+    displayName: "Build x86"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: win-x86
+  - job: x64
+    displayName: "Build x64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: win-x64
+  - job: DX64
+    displayName: "Build osxX64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: osx-x64
+  - job: LX64
+    displayName: "Build linuxX64"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: linux-x64
+  - job: AnyCPU
+    displayName: "Build AnyCPU"
+    steps: 
+      - template: build/azure-pipeline-steps.yml
+        parameters:
+          OSTarget: any
