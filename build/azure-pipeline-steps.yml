@@ -93,7 +93,7 @@ steps:
       SymbolsSymwebProject: 'VS'
       SymbolsEmailContacts: 'ptvscore@microsoft.com'
       SymbolsUncPath: $(Build.BinariesDirectory)/out
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq('${{ parameters.OSTarget }}', 'any'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
 
   - task: NuGetCommand@2
     displayName: 'NuGet publish parsing '
