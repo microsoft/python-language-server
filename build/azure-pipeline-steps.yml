@@ -87,6 +87,14 @@ steps:
       configuration: '$(BuildConfiguration)'
       msbuildArguments: '/p:OutputPath=$(Build.ArtifactStagingDirectory)\packages /p:SignPackage=true /p:Version=$(Build.BuildNumber)'
 
+  - task: MicroBuildArchiveSymbols@1
+    inputs:
+      SymbolsFeatureName: 'MPLS'
+      SymbolsSymwebProject: 'VS'
+      SymbolsEmailContacts: 'ptvscore@microsoft.com'
+      SymbolsUncPath: $(Build.BinariesDirectory)/out
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
+
   - task: NuGetCommand@2
     displayName: 'NuGet publish parsing '
     inputs:
