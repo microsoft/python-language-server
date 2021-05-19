@@ -92,7 +92,7 @@ steps:
       SymbolsFeatureName: 'MPLS'
       SymbolsSymwebProject: 'VS'
       SymbolsEmailContacts: 'ptvscore@microsoft.com'
-      SymbolsUncPath: $(Build.BinariesDirectory)/out
+      SymbolsAgentPath: $(Build.BinariesDirectory)/out
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq('${{ parameters.OSTarget }}', 'any'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
 
   - task: NuGetCommand@2
