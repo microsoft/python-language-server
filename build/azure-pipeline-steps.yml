@@ -94,13 +94,16 @@ steps:
       SymbolServerType: 'TeamServices'
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq('${{ parameters.OSTarget }}', 'any'), eq(variables['ShouldPublishNuget'], 'True'), eq(variables['SignType'], 'real'))
 
+# If API key expires, you need to generate a new one here:
+# https://www.nuget.org/account/apikeys
+# You'll need admin permission to associate the key with the Python Tools org
   - task: NuGetCommand@2
     displayName: 'NuGet publish parsing '
     inputs:
       command: push
       packagesToPush: '$(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
       nuGetFeedType: external
-      publishFeedCredentials: 'rchiodo_nuget'
+      publishFeedCredentials: 'python_language_server_nuget'
     condition: and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq('${{ parameters.OSTarget }}', 'any'), notin(variables['Build.Reason'], 'PullRequest')) 
     timeoutInMinutes: 20
 
