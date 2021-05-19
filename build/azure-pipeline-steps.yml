@@ -4,8 +4,7 @@ parameters:
   default: 'win-x86'
 
 variables:
-   - name: OSTarget
-     value: ${{ parameters.OSTarget }}
+   OSTarget: ${{ parameters.OSTarget }}
 
 steps:
   - task: MicroBuildSigningPlugin@3
