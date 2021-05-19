@@ -34,7 +34,7 @@ steps:
       arguments: '-c $(BuildConfiguration) -r ${{ parameters.OSTarget }} -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
       zipAfterPublish: false
       modifyOutputPath: false
-    condition: and(succeeded(), ne(parameters.OSTarget, 'any'))      
+    condition: ${{ and(succeeded(), ne(parameters.OSTarget, 'any')) }}
 
   - task: DotNetCoreCLI@2
     displayName: 'dotnet publish LanguageServer for Any'
@@ -45,7 +45,7 @@ steps:
       arguments: '-c $(BuildConfiguration) -o $(Build.BinariesDirectory)/out /p:SignType=None  /p:Version=$(Build.BuildNumber)'
       zipAfterPublish: false
       modifyOutputPath: false
-    condition: and(succeeded(), eq(parameters.OSTarget, 'any'))
+    condition: ${{ and(succeeded(), eq(parameters.OSTarget, 'any')) }}
 
   - task: MSBuild@1
     displayName: 'Sign assemblies'
@@ -94,7 +94,7 @@ steps:
       packagesToPush: '$(Build.ArtifactStagingDirectory)/**/Microsoft.Python.Parsing*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
       nuGetFeedType: external
       publishFeedCredentials: 'rchiodo_nuget'
-    condition: and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(parameters.OSTarget, 'any'), notin(variables['Build.Reason'], 'PullRequest')) 
+    condition: ${{ and(succeeded(), eq(variables['ShouldPublishNuget'], 'True'), eq(parameters.OSTarget, 'any'), notin(variables['Build.Reason'], 'PullRequest')) }}
     timeoutInMinutes: 20
 
   - task: MicroBuildCleanup@1
