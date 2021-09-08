@@ -13,7 +13,7 @@ trigger:
 
 
 pool:
-  name: VSEngSS-MicroBuild2019
+  name: VSEngSS-MicroBuild2019-1ES
 
 # Need a job for win-x86,win-x64,osx-x64,linux-x64,any
 jobs:
