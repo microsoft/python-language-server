@@ -53,9 +53,13 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                         augs.Right?.Walk(new ExpressionWalker(this));
                         break;
                     case AssignmentStatement asst:
+                        var lhs = asst.Left.MaybeEnumerate().ToArray();
+                        if (lhs.Length > 0) {
+                            lhs[0]?.Walk(new ExpressionWalker(this));
+                        }
                         _suppressDiagnostics = true;
-                        foreach (var lhs in asst.Left ?? Enumerable.Empty<Expression>()) {
-                            lhs?.Walk(new ExpressionWalker(this));
+                        foreach (var l in lhs.Skip(1)) {
+                            l?.Walk(new ExpressionWalker(this));
                         }
                         _suppressDiagnostics = false;
                         asst.Right?.Walk(new ExpressionWalker(this));
@@ -73,7 +77,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             ReportUndefinedVariable(node.Name, eval.GetLocation(node).Span);
         }
 
-        public void ReportUndefinedVariable(string name, SourceSpan span) {
+        private void ReportUndefinedVariable(string name, SourceSpan span) {
             if (!_suppressDiagnostics) {
                 _diagnostics.Add(new DiagnosticsEntry(
                     Resources.UndefinedVariable.FormatInvariant(name),
