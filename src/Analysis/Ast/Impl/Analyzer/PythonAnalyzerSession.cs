@@ -31,6 +31,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Testing;
 using Microsoft.Python.Parsing.Ast;
+using DiagnosticSource = Microsoft.Python.Analysis.Diagnostics.DiagnosticSource;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonAnalyzerSession {
