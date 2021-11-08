@@ -27,6 +27,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
+using DiagnosticSource = Microsoft.Python.Analysis.Diagnostics.DiagnosticSource;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{FunctionDefinition.Name}")]

@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Microsoft.Python.Analysis</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis</AssemblyName>
   </PropertyGroup>
