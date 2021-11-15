@@ -3,6 +3,11 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Microsoft.Python.Parsing</RootNamespace>
     <AssemblyName>Microsoft.Python.Parsing</AssemblyName>
+    <PackageId>Microsoft.Python.Parsing</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Apiiro</Authors>
+    <Company>Apiiro</Company>
+    <RepositoryUrl>https://github.com/apiiro/python-language-server</RepositoryUrl>
   </PropertyGroup>
   <PropertyGroup>
     <!--
