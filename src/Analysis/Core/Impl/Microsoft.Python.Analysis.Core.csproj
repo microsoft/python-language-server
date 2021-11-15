@@ -3,6 +3,11 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Microsoft.Python.Analysis</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis.Core</AssemblyName>
+    <PackageId>Microsoft.Python.Analysis.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Apiiro</Authors>
+    <Company>Apiiro</Company>
+    <RepositoryUrl>https://github.com/apiiro/python-language-server</RepositoryUrl>
   </PropertyGroup>
   <PropertyGroup>
     <!--
