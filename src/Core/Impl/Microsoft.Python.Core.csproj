@@ -4,7 +4,7 @@
     <RootNamespace>Microsoft.Python.Core</RootNamespace>
     <AssemblyName>Microsoft.Python.Core</AssemblyName>
     <PackageId>Microsoft.Python.Core</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>Apiiro</Authors>
     <Company>Apiiro</Company>
     <RepositoryUrl>https://github.com/apiiro/python-language-server</RepositoryUrl>
