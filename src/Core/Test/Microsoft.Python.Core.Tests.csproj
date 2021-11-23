@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Microsoft.Python.Core.Tests</RootNamespace>
     <AssemblyName>Microsoft.Python.Core.Tests</AssemblyName>
   </PropertyGroup>

@@ -167,14 +167,15 @@ namespace Microsoft.Python.Core {
             }
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> selector) {
-            var seen = new HashSet<TKey>();
-
-            foreach (var item in source) {
-                if (seen.Add(selector(item))) {
-                    yield return item;
-                }
-            }
-        }
+        // this method is implemented is System.Linq in .net core 6
+        // public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> selector) {
+        //     var seen = new HashSet<TKey>();
+        //
+        //     foreach (var item in source) {
+        //         if (seen.Add(selector(item))) {
+        //             yield return item;
+        //         }
+        //     }
+        // }
     }
 }

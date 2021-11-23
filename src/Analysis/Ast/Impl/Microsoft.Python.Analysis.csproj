@@ -1,10 +1,10 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Microsoft.Python.Analysis</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis</AssemblyName>
     <PackageId>Microsoft.Python.Analysis</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Apiiro</Authors>
     <Company>Apiiro</Company>
     <RepositoryUrl>https://github.com/apiiro/python-language-server</RepositoryUrl>
