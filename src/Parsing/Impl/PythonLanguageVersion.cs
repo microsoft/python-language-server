@@ -38,7 +38,9 @@ namespace Microsoft.Python.Parsing {
         V36 = 0x0306,
         V37 = 0x0307,
         V38 = 0x0308,
-        V39 = 0x0309
+        V39 = 0x0309,
+        V310 = 0x030a,
+        V311 = 0x030b,
     }
 
     public static class PythonLanguageVersionExtensions {
