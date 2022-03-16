@@ -16,8 +16,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Extensions;
@@ -55,6 +57,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
+
         public override bool Walk(SetComprehension node) {
             node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
@@ -74,6 +77,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             node.Value?.Walk(this);
             return false;
         }
+
+        public override bool Walk(IfStatement node) 
+            => node.WalkIfWithSystemConditions(_walker, 
+                _walker.Analysis.Document.Interpreter.LanguageVersion, 
+                _walker.Services.GetService<IOSPlatform>());
 
         public override bool Walk(NameExpression node) {
             if (_localNames?.Contains(node.Name) == true) {
