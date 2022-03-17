@@ -832,6 +832,30 @@ x += 1
             d[0].SourceSpan.Should().Be(2, 1, 2, 2);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task UndefinedInInit() {
+            const string code = @"
+class TestIt():
+    def __init__(self):
+        slf.y = 6
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(4, 9, 4, 12);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UndefinedIndex() {
+            const string code = @"
+x = [1, 2]
+x[y] = 1
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(3, 3, 3, 4);
+        }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
